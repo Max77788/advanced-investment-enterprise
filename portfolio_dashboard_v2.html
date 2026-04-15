@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investment Framework · v1.1</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+:root {
+  --bg:#0a0e1a; --surface:#111827; --surface2:#1a2236; --surface3:#0d1526;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0; --muted:#6b7280; --hint:#4b5563;
+  --accent:#3b82f6; --accent2:#60a5fa; --accent3:#93c5fd;
+  --green:#10b981; --green2:#34d399; --green3:#6ee7b7;
+  --red:#ef4444; --red2:#f87171; --amber:#f59e0b; --amber2:#fbbf24;
+  --purple:#8b5cf6; --purple2:#a78bfa; --teal:#14b8a6;
+  --mono:'DM Mono',monospace; --sans:'DM Sans',sans-serif; --display:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.025) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
+
+/* ── NAV ── */
+nav{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(10,14,26,0.95);border-bottom:1px solid var(--border);height:52px;flex-shrink:0;backdrop-filter:blur(12px);}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{font-family:var(--display);font-size:15px;font-weight:800;color:var(--text);letter-spacing:-0.3px;}
+.nav-ver{font-family:var(--mono);font-size:10px;color:var(--accent2);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:4px;padding:2px 7px;}
+.nav-tabs{display:flex;gap:2px;}
+.nav-tab{padding:6px 16px;border-radius:8px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);cursor:pointer;border:none;background:transparent;transition:all .15s;}
+.nav-tab:hover{color:var(--text);background:var(--surface2);}
+.nav-tab.active{color:var(--accent2);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.price-status{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+.price-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
+.price-dot.live{background:var(--green2);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.fetch-btn{padding:5px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:0.06em;}
+.fetch-btn:hover{border-color:var(--green);color:var(--green2);}
+.fetch-btn.loading{color:var(--amber2);border-color:var(--amber);}
+
+/* ── PAGES ── */
+.page-wrap{position:relative;z-index:1;flex:1;overflow:hidden;}
+.page{display:none;height:100%;overflow-y:auto;padding:28px;}
+.page.active{display:block;}
+
+/* ── SCROLLBAR ── */
+.page::-webkit-scrollbar{width:4px;}
+.page::-webkit-scrollbar-track{background:transparent;}
+.page::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── SHARED ── */
+.section-title{font-family:var(--display);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.badge{font-family:var(--mono);font-size:10px;font-weight:500;padding:2px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.05em;}
+.badge::before{content:'';width:4px;height:4px;border-radius:50%;}
+.b-green{background:rgba(16,185,129,.1);color:var(--green2);border:1px solid rgba(16,185,129,.2);}.b-green::before{background:var(--green2);}
+.b-red{background:rgba(239,68,68,.1);color:var(--red2);border:1px solid rgba(239,68,68,.2);}.b-red::before{background:var(--red2);}
+.b-amber{background:rgba(245,158,11,.1);color:var(--amber2);border:1px solid rgba(245,158,11,.2);}.b-amber::before{background:var(--amber2);}
+.b-blue{background:rgba(59,130,246,.1);color:var(--accent2);border:1px solid rgba(59,130,246,.2);}.b-blue::before{background:var(--accent2);}
+.b-gray{background:rgba(107,114,128,.1);color:var(--muted);border:1px solid rgba(107,114,128,.2);}.b-gray::before{background:var(--muted);}
+
+/* ── PAGE 1: PORTFOLIO ── */
+.stats-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:24px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.stat-label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:5px;}
+.stat-val{font-family:var(--display);font-size:20px;font-weight:700;color:var(--text);}
+.stat-val.g{color:var(--green2);} .stat-val.r{color:var(--red2);}
+.stat-sub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* portfolio table */
+.ptable{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px;}
+.pthead{display:grid;grid-template-columns:70px 160px 95px 95px 95px 100px 90px 95px 80px 70px;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.pth{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--hint);padding:0 4px;}
+.prow{display:grid;grid-template-columns:70px 160px 95px 95px 95px 100px 90px 95px 80px 70px;padding:13px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .12s;cursor:pointer;}
+.prow:last-child{border-bottom:none;}
+.prow:hover{background:rgba(255,255,255,0.018);}
+.ptd{padding:0 4px;font-size:12px;}
+.ticker-text{font-family:var(--display);font-size:13px;font-weight:800;color:var(--accent2);}
+.name-text{color:var(--muted);font-size:11px;line-height:1.3;}
+.sector-text{color:var(--hint);font-size:10px;font-family:var(--mono);}
+.mono{font-family:var(--mono);}
+.g{color:var(--green2);} .r{color:var(--red2);}
+.stop-wrap{display:flex;flex-direction:column;gap:3px;}
+.stop-track{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.stop-fill{height:100%;background:linear-gradient(90deg,var(--red2) 0%,var(--amber2) 50%,var(--green2) 100%);border-radius:2px;}
+.price-cell{display:flex;align-items:center;gap:5px;}
+.price-live-dot{width:5px;height:5px;border-radius:50%;background:var(--green2);flex-shrink:0;}
+.price-stale-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.edit-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:3px 9px;font-family:var(--mono);font-size:9px;cursor:pointer;transition:all .14s;text-transform:uppercase;letter-spacing:.05em;}
+.edit-btn:hover{border-color:var(--accent);color:var(--accent2);}
+
+/* add btn */
+.add-row-btn{width:100%;padding:10px;background:transparent;border:1px dashed var(--border2);border-radius:10px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .14s;text-transform:uppercase;letter-spacing:.08em;margin-bottom:24px;}
+.add-row-btn:hover{border-color:var(--accent);color:var(--accent2);background:rgba(59,130,246,.03);}
+
+/* price api section */
+.api-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:24px;}
+.api-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
+.api-option{border:1px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;transition:all .14s;background:var(--surface2);}
+.api-option.selected{border-color:var(--accent);background:rgba(59,130,246,.07);}
+.api-option:hover:not(.selected){border-color:var(--border2);background:var(--surface3);}
+.api-name{font-family:var(--display);font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.api-desc{font-size:10px;color:var(--muted);}
+.api-tag{font-family:var(--mono);font-size:9px;margin-top:6px;}
+.api-free{color:var(--green2);} .api-key{color:var(--amber2);} .api-cors{color:var(--red2);}
+.api-row{display:flex;gap:8px;align-items:center;}
+.api-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;transition:border-color .15s;}
+.api-input:focus{border-color:var(--accent);}
+.fetch-all-btn{padding:8px 18px;background:var(--green);border:none;border-radius:8px;color:white;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.fetch-all-btn:hover{background:#059669;}
+.fetch-all-btn:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed;}
+.api-note{font-size:11px;color:var(--muted);padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);line-height:1.5;}
+.api-note a{color:var(--accent2);text-decoration:none;}
+.api-note a:hover{text-decoration:underline;}
+
+/* prompt + control row */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.prompt-box{font-family:var(--mono);font-size:11px;color:var(--green2);background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word;min-height:120px;}
+.copy-prompt-btn{margin-top:8px;padding:8px 14px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .14s;text-transform:uppercase;letter-spacing:.06em;}
+.copy-prompt-btn:hover{border-color:var(--green);color:var(--green2);}
+.run-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.run-btn{padding:11px;border:none;border-radius:9px;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;color:white;letter-spacing:.02em;}
+.run-btn:hover{transform:translateY(-1px);}
+.run-btn.fri{background:#7c3aed;} .run-btn.fri:hover{background:#6d28d9;}
+.run-btn.mon{background:#0891b2;} .run-btn.mon:hover{background:#0e7490;}
+.run-btn.daily{background:var(--green);} .run-btn.daily:hover{background:#059669;}
+.run-btn.n8n{background:#ea580c;} .run-btn.n8n:hover{background:#c2410c;}
+
+/* output */
+.output-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;}
+.output-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.output-title{font-family:var(--display);font-size:12px;font-weight:700;}
+.output-time{font-family:var(--mono);font-size:10px;color:var(--muted);}
+.loading-bar{height:2px;background:var(--border);overflow:hidden;display:none;}
+.loading-bar.on{display:block;}
+.loading-fill{height:100%;background:linear-gradient(90deg,transparent,var(--accent),transparent);width:40%;animation:slide 1.1s linear infinite;}
+@keyframes slide{0%{transform:translateX(-100%);}100%{transform:translateX(350%);}}
+.output-body{padding:18px;min-height:100px;font-size:12px;line-height:1.7;color:var(--text);}
+.output-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90px;gap:8px;color:var(--hint);font-size:12px;}
+
+/* N8N */
+.n8n-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:24px;}
+.n8n-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.n8n-badge{background:rgba(234,88,12,.1);border:1px solid rgba(234,88,12,.25);color:#fb923c;border-radius:5px;padding:3px 9px;font-family:var(--mono);font-size:10px;}
+.wh-row{display:flex;gap:8px;margin-bottom:10px;}
+.wh-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;transition:border-color .15s;}
+.wh-input:focus{border-color:var(--accent);}
+.wh-copy{padding:8px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .14s;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+.wh-copy:hover{border-color:var(--accent);color:var(--accent2);}
+.payload-view{background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:12px;font-family:var(--mono);font-size:10px;color:var(--green2);line-height:1.75;white-space:pre;overflow-x:auto;margin-bottom:10px;}
+.pk{color:var(--accent2);} .ps{color:var(--amber2);} .pn{color:var(--purple2);}
+.n8n-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.n8n-step{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.step-num{font-family:var(--mono);font-size:9px;color:var(--accent2);margin-bottom:3px;}
+.step-text{font-size:11px;color:var(--muted);line-height:1.4;}
+.step-text strong{color:var(--text);}
+
+/* ── PAGE 2: FRAMEWORK ── */
+.fw-header{margin-bottom:28px;}
+.fw-title{font-family:var(--display);font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;}
+.fw-sub{color:var(--muted);font-size:13px;}
+.fw-meta{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+.fw-tag{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:5px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted);}
+
+/* change log banner */
+.changelog-banner{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:flex-start;gap:12px;}
+.cl-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.cl-content{flex:1;}
+.cl-title{font-family:var(--display);font-size:12px;font-weight:700;color:var(--amber2);margin-bottom:4px;}
+.cl-body{font-size:11px;color:var(--muted);line-height:1.6;}
+
+/* gate cards */
+.gates-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:24px;}
+.gate-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;transition:border-color .15s;}
+.gate-card:hover{border-color:var(--border2);}
+.gate-card.gate0{border-top:2px solid var(--red2);}
+.gate-card.gate1{border-top:2px solid var(--purple2);}
+.gate-card.gate2{border-top:2px solid var(--accent2);}
+.gate-card.gate3{border-top:2px solid var(--green2);}
+.gate-card.gate4{border-top:2px solid var(--amber2);}
+.gate-card.gate5{border-top:2px solid var(--teal);}
+.gate-num{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;}
+.gate-name{font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.gate-cond{font-size:11px;color:var(--muted);line-height:1.5;}
+.gate-cond strong{color:var(--text);}
+
+/* parameters table */
+.param-table{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;}
+.param-head{display:grid;grid-template-columns:200px 1fr;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.param-th{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--hint);}
+.param-row{display:grid;grid-template-columns:200px 1fr;padding:11px 16px;border-bottom:1px solid var(--border);align-items:start;}
+.param-row:last-child{border-bottom:none;}
+.param-row:nth-child(even){background:rgba(255,255,255,.012);}
+.param-key{font-family:var(--mono);font-size:11px;color:var(--accent2);}
+.param-val{font-size:12px;color:var(--text);}
+.param-val.editable{cursor:pointer;border-bottom:1px dashed var(--border2);display:inline-block;}
+.param-val.editable:hover{border-color:var(--accent);color:var(--accent2);}
+
+/* rules list */
+.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+.rule-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;display:flex;gap:10px;align-items:flex-start;}
+.rule-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px;}
+.rule-icon.r{background:rgba(239,68,68,.1);color:var(--red2);}
+.rule-icon.g{background:rgba(16,185,129,.1);color:var(--green2);}
+.rule-icon.a{background:rgba(245,158,11,.1);color:var(--amber2);}
+.rule-icon.b{background:rgba(59,130,246,.1);color:var(--accent2);}
+.rule-text{font-size:11px;color:var(--muted);line-height:1.5;}
+.rule-text strong{color:var(--text);display:block;margin-bottom:2px;font-size:12px;}
+
+/* sources */
+.sources-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:24px;}
+.source-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.source-name{font-family:var(--display);font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.source-what{font-size:10px;color:var(--muted);line-height:1.4;}
+
+/* review cadence */
+.cadence-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+.cadence-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px;}
+.cadence-day{font-family:var(--display);font-size:14px;font-weight:700;margin-bottom:2px;}
+.cadence-time{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;}
+.cadence-item{font-size:11px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--border);}
+.cadence-item:last-child{border-bottom:none;}
+.cadence-item strong{color:var(--text);}
+
+/* sectors */
+.sector-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:24px;}
+.sector-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;}
+.sector-name{font-size:12px;font-weight:500;color:var(--text);}
+.sector-status{font-family:var(--mono);font-size:9px;}
+.sector-held{color:var(--amber2);}
+.sector-free{color:var(--green2);}
+
+/* edit framework inline */
+.edit-note{font-size:11px;color:var(--hint);margin-bottom:16px;font-family:var(--mono);}
+.inline-edit{background:transparent;border:none;border-bottom:1px dashed var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;outline:none;width:100%;padding:2px 0;transition:border-color .15s;}
+.inline-edit:focus{border-color:var(--accent);}
+.save-fw-btn{padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:white;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;}
+.save-fw-btn:hover{background:#2563eb;}
+
+/* review log */
+.log-table{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;}
+.log-head{display:grid;grid-template-columns:120px 80px 80px 1fr 80px;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.log-th{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--hint);}
+.log-row{display:grid;grid-template-columns:120px 80px 80px 1fr 80px;padding:10px 16px;border-bottom:1px solid var(--border);align-items:center;}
+.log-row:last-child{border-bottom:none;}
+.log-td{font-size:11px;color:var(--muted);}
+.log-td.highlight{color:var(--text);}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:18px;padding:26px;width:100%;max-width:460px;animation:mIn .2s ease;}
+@keyframes mIn{from{transform:translateY(14px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-title{font-family:var(--display);font-size:16px;font-weight:800;margin-bottom:3px;}
+.modal-sub{font-size:11px;color:var(--muted);margin-bottom:18px;}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);}
+.field input,.field select{background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;transition:border-color .15s;width:100%;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.field select option{background:var(--surface2);}
+.modal-actions{display:flex;gap:8px;margin-top:18px;}
+.btn-save{flex:1;padding:10px;background:var(--accent);border:none;border-radius:7px;color:white;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:background .14s;}
+.btn-save:hover{background:#2563eb;}
+.btn-cancel{padding:10px 18px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .14s;}
+.btn-cancel:hover{border-color:var(--red);color:var(--red2);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">Investment Framework</div>
+    <div class="nav-ver">v1.1</div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('portfolio',this)">Portfolio</button>
+    <button class="nav-tab" onclick="showPage('framework',this)">Framework</button>
+  </div>
+  <div class="nav-right">
+    <div class="price-status">
+      <div class="price-dot" id="priceDot"></div>
+      <span id="priceStatus">Prices: manual</span>
+    </div>
+    <button class="fetch-btn" id="fetchBtn" onclick="fetchAllPrices()">Refresh prices</button>
+  </div>
+</nav>
+
+<div class="page-wrap">
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 1: PORTFOLIO
+══════════════════════════════════════════════════ -->
+<div class="page active" id="page-portfolio">
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat"><div class="stat-label">Total value</div><div class="stat-val" id="s-value">—</div></div>
+    <div class="stat"><div class="stat-label">Total gain</div><div class="stat-val" id="s-gain">—</div><div class="stat-sub" id="s-gainpct">—</div></div>
+    <div class="stat"><div class="stat-label">Strategy positions</div><div class="stat-val" id="s-active">0</div><div class="stat-sub">max 2 · diff sectors</div></div>
+    <div class="stat"><div class="stat-label">Cash reserve</div><div class="stat-val" id="s-cash">$274.99</div></div>
+    <div class="stat"><div class="stat-label">Max loss guardrail</div><div class="stat-val">$4,800</div><div class="stat-sub">20% of $24,000</div></div>
+  </div>
+
+  <!-- Live Price API -->
+  <div class="section-title">Live price feed</div>
+  <div class="api-card">
+    <div class="api-grid">
+      <div class="api-option selected" id="api-yahoo" onclick="selectApi('yahoo')">
+        <div class="api-name">Yahoo Finance</div>
+        <div class="api-desc">Via CORS proxy — no API key needed</div>
+        <div class="api-tag api-free">Free · No key required</div>
+      </div>
+      <div class="api-option" id="api-finnhub" onclick="selectApi('finnhub')">
+        <div class="api-name">Finnhub</div>
+        <div class="api-desc">Real-time quotes, free tier available</div>
+        <div class="api-tag api-key">Free · API key required</div>
+      </div>
+      <div class="api-option" id="api-alphavantage" onclick="selectApi('alphavantage')">
+        <div class="api-name">Alpha Vantage</div>
+        <div class="api-desc">Free tier, 25 requests/day limit</div>
+        <div class="api-tag api-key">Free · API key required</div>
+      </div>
+    </div>
+    <div class="api-row" id="apiKeyRow" style="display:none; margin-bottom:10px;">
+      <input class="api-input" id="apiKeyInput" placeholder="Paste your API key here — saved locally" />
+    </div>
+    <div class="api-row">
+      <input class="api-input" id="corsProxy" value="https://corsproxy.io/?" placeholder="CORS proxy URL (for Yahoo Finance)" />
+      <button class="fetch-all-btn" id="fetchAllBtn" onclick="fetchAllPrices()">Fetch all prices</button>
+    </div>
+    <div class="api-note" style="margin-top:10px;" id="apiNote">
+      Yahoo Finance uses a free CORS proxy to bypass browser restrictions. No account needed.
+      If the proxy is blocked, try <a href="https://cors-anywhere.herokuapp.com/" target="_blank">cors-anywhere</a> or
+      <a href="https://allorigins.win/" target="_blank">allorigins.win</a>.
+      For Finnhub / Alpha Vantage, get a free key at their site and paste it above.
+    </div>
+  </div>
+
+  <!-- Portfolio Table -->
+  <div class="section-title">Positions</div>
+  <div class="ptable">
+    <div class="pthead">
+      <div class="pth">Ticker</div>
+      <div class="pth">Name / Sector</div>
+      <div class="pth">Entry $</div>
+      <div class="pth">Current $</div>
+      <div class="pth">Gain %</div>
+      <div class="pth">P&L $</div>
+      <div class="pth">Stop GTC</div>
+      <div class="pth">Target 1</div>
+      <div class="pth">Status</div>
+      <div class="pth">Edit</div>
+    </div>
+    <div id="portfolioRows"></div>
+  </div>
+  <button class="add-row-btn" onclick="openAdd()">+ Add position</button>
+
+  <!-- Prompt + Controls -->
+  <div class="section-title">Review prompt &amp; controls</div>
+  <div class="two-col">
+    <div>
+      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:6px;">Auto-generated prompt — paste into Claude</div>
+      <div class="prompt-box" id="promptBox">Loading...</div>
+      <button class="copy-prompt-btn" onclick="copyPrompt()">Copy prompt</button>
+    </div>
+    <div class="card">
+      <div style="font-family:var(--display);font-size:13px;font-weight:700;margin-bottom:3px;">Run review</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Generates the correct prompt for each review type</div>
+      <div class="run-grid">
+        <button class="run-btn fri" onclick="runReview('Friday')">Friday review</button>
+        <button class="run-btn mon" onclick="runReview('Monday')">Monday review</button>
+      </div>
+      <button class="run-btn daily" style="width:100%;margin-bottom:8px;" onclick="runReview('Daily')">Daily check</button>
+      <button class="run-btn n8n" style="width:100%;" onclick="simulateN8N()">Simulate N8N trigger</button>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="output-card">
+    <div class="output-head">
+      <div class="output-title">Review output</div>
+      <div class="output-time" id="outputTime">Not yet run</div>
+    </div>
+    <div class="loading-bar" id="loadingBar"><div class="loading-fill"></div></div>
+    <div class="output-body" id="outputBody">
+      <div class="output-empty">
+        <div>◎</div>
+        <div>Run a review above — the prompt will generate and be ready to paste into Claude.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- N8N -->
+  <div class="section-title">N8N automation</div>
+  <div class="n8n-card">
+    <div class="n8n-head">
+      <div><div style="font-family:var(--display);font-size:13px;font-weight:700;">Webhook trigger</div><div style="font-size:11px;color:var(--muted);">Auto-trigger reviews from N8N on your schedule</div></div>
+      <div class="n8n-badge">N8N · Webhook</div>
+    </div>
+    <div class="wh-row">
+      <input class="wh-input" id="webhookUrl" placeholder="https://your-n8n-instance.com/webhook/portfolio-review" />
+      <button class="wh-copy" onclick="copyWH()">Copy URL</button>
+      <button class="wh-copy" onclick="copyPayload()">Copy payload</button>
+    </div>
+    <div class="payload-view" id="payloadView"></div>
+    <div class="n8n-steps">
+      <div class="n8n-step"><div class="step-num">Step 1 — N8N</div><div class="step-text"><strong>Schedule Trigger</strong> — Mon 8:30 AM CT + Fri 1:30 PM CT. Cron: <code style="color:var(--accent2);">30 8 * * 1</code> and <code style="color:var(--accent2);">30 13 * * 5</code></div></div>
+      <div class="n8n-step"><div class="step-num">Step 2 — N8N</div><div class="step-text"><strong>HTTP Request</strong> node — POST to your Claude API or webhook URL. Body: the payload shown above.</div></div>
+      <div class="n8n-step"><div class="step-num">Step 3 — N8N</div><div class="step-text"><strong>Code node</strong> — build the review prompt from the payload. Append current prices from Yahoo Finance API call.</div></div>
+      <div class="n8n-step"><div class="step-num">Step 4 — N8N</div><div class="step-text"><strong>Email / Telegram / Slack</strong> node — receive the full Claude framework review automatically in your inbox.</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE 2: FRAMEWORK
+══════════════════════════════════════════════════ -->
+<div class="page" id="page-framework">
+
+  <div class="fw-header">
+    <div class="fw-title">Investment Research Framework</div>
+    <div class="fw-sub">The complete strategy, gates, guardrails, and review process — Version 1.1</div>
+    <div class="fw-meta">
+      <span class="fw-tag">Locked: April 10, 2026</span>
+      <span class="fw-tag">Updated: April 10, 2026</span>
+      <span class="fw-tag">6-month review: October 2026</span>
+      <span class="fw-tag">Capital: $24,000</span>
+    </div>
+  </div>
+
+  <!-- Changelog banner -->
+  <div class="changelog-banner">
+    <div class="cl-icon">⟳</div>
+    <div class="cl-content">
+      <div class="cl-title">v1.1 changes from v1.0</div>
+      <div class="cl-body">Added bi-weekly Friday + Monday review cadence · Sector diversification rule (2 positions, different sectors always) · Rotation rules (exit before entering, wait 1 week post-stop) · Trigger prompt system · Alert setup guide for Etrade and Fidelity · Sector rotation menu with 9 buckets</div>
+    </div>
+  </div>
+
+  <!-- Portfolio parameters -->
+  <div class="section-title">Portfolio parameters</div>
+  <div class="edit-note">// click any value to edit inline — changes save automatically</div>
+  <div class="param-table" id="paramTable"></div>
+
+  <!-- The 6-gate system -->
+  <div class="section-title">The 6-gate system</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Every candidate must pass all six gates in order. Failure at any gate = automatic disqualification. No exceptions.</div>
+  <div class="gates-grid" id="gatesGrid"></div>
+
+  <!-- Hard rules -->
+  <div class="section-title">Non-negotiable hard rules</div>
+  <div class="rules-grid" id="rulesGrid"></div>
+
+  <!-- Review cadence -->
+  <div class="section-title">Bi-weekly review cadence</div>
+  <div class="cadence-grid">
+    <div class="cadence-card" style="border-top:2px solid var(--purple2);">
+      <div class="cadence-day" style="color:var(--purple2);">Friday review</div>
+      <div class="cadence-time">By 2:00 PM CT · Before market close</div>
+      <div class="cadence-item"><strong>Focus:</strong> Close the week clean</div>
+      <div class="cadence-item"><strong>Check:</strong> Stop-loss orders active on Etrade/Fidelity</div>
+      <div class="cadence-item"><strong>Check:</strong> Any analyst downgrades this week?</div>
+      <div class="cadence-item"><strong>Check:</strong> Weekend macro risk events?</div>
+      <div class="cadence-item"><strong>Decide:</strong> Hold / take partials / tighten stop / exit</div>
+      <div class="cadence-item"><strong>Rule:</strong> Uncertain? Tighten stop. You can re-enter.</div>
+    </div>
+    <div class="cadence-card" style="border-top:2px solid var(--accent2);">
+      <div class="cadence-day" style="color:var(--accent2);">Monday review</div>
+      <div class="cadence-time">By 9:30 AM CT · Before market open</div>
+      <div class="cadence-item"><strong>Focus:</strong> Catch what changed over weekend</div>
+      <div class="cadence-item"><strong>Check:</strong> Geopolitical news — ceasefire, oil, OPEC</div>
+      <div class="cadence-item"><strong>Check:</strong> Pre-market prices for all positions</div>
+      <div class="cadence-item"><strong>Check:</strong> Sector ETFs (SMH for tech, JETS for airlines)</div>
+      <div class="cadence-item"><strong>Decide:</strong> Hold / deploy reserve / adjust stop / exit</div>
+      <div class="cadence-item"><strong>Rule:</strong> Wait until 9:45 AM ET before acting at open.</div>
+    </div>
+  </div>
+
+  <!-- Sector menu -->
+  <div class="section-title">Sector rotation menu</div>
+  <div class="sector-grid" id="sectorGrid"></div>
+
+  <!-- Data sources -->
+  <div class="section-title">Locked data sources</div>
+  <div class="sources-grid" id="sourcesGrid"></div>
+
+  <!-- Review log -->
+  <div class="section-title">Strategy review log</div>
+  <div class="log-table">
+    <div class="log-head">
+      <div class="log-th">Date</div>
+      <div class="log-th">Type</div>
+      <div class="log-th">Version</div>
+      <div class="log-th">Changes made</div>
+      <div class="log-th">Next review</div>
+    </div>
+    <div id="reviewLog"></div>
+  </div>
+
+  <div style="margin-bottom:40px;display:flex;gap:10px;">
+    <button class="save-fw-btn" onclick="addLogEntry()">+ Add log entry</button>
+    <button class="save-fw-btn" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border2);" onclick="exportFramework()">Export framework</button>
+  </div>
+
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOut(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Edit position</div>
+    <div class="modal-sub">Update any field — prices auto-calculate gains and prompt</div>
+    <div class="field-grid">
+      <div class="field"><label>Ticker</label><input id="f-ticker" placeholder="MU" /></div>
+      <div class="field"><label>Company name</label><input id="f-name" placeholder="Micron Technology" /></div>
+    </div>
+    <div class="field-grid">
+      <div class="field"><label>Sector</label>
+        <select id="f-sector">
+          <option>Tech / AI / Semis</option><option>Travel / Airlines</option>
+          <option>Energy / Oil &amp; Gas</option><option>Healthcare / Biotech</option>
+          <option>Financials / Banks</option><option>Real Estate / REITs</option>
+          <option>Defense / Aerospace</option><option>Consumer / Retail</option>
+          <option>Clean Energy</option><option>Other — non-strategy</option>
+        </select>
+      </div>
+      <div class="field"><label>Shares</label><input id="f-shares" type="number" placeholder="32" /></div>
+    </div>
+    <div class="field-grid">
+      <div class="field"><label>Entry price $</label><input id="f-entry" type="number" step="0.01" placeholder="421.00" /></div>
+      <div class="field"><label>Current price $</label><input id="f-current" type="number" step="0.01" placeholder="438.64" /></div>
+    </div>
+    <div class="field-grid">
+      <div class="field"><label>Stop-loss $ (GTC)</label><input id="f-stop" type="number" step="0.01" placeholder="410.00" /></div>
+      <div class="field"><label>Target 1 $</label><input id="f-target" type="number" step="0.01" placeholder="460.00" /></div>
+    </div>
+    <div class="field-grid">
+      <div class="field"><label>In strategy?</label>
+        <select id="f-strategy"><option value="yes">Yes — active strategy</option><option value="no">No — legacy hold</option></select>
+      </div>
+      <div class="field"><label>Date acquired</label><input id="f-date" type="date" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="savePosition()">Save position</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const SK = 'inv_fw_v2';
+const SK_FW = 'inv_fw_framework_v2';
+
+const DEFAULT_PORTFOLIO = [
+  {ticker:'MU',name:'Micron Technology',sector:'Tech / AI / Semis',shares:32,entry:421.00,current:438.64,stop:410.00,target:460.00,strategy:'yes',date:'2026-04-10',live:false},
+  {ticker:'DAL',name:'Delta Air Lines',sector:'Travel / Airlines',shares:100,entry:67.69,current:72.04,stop:68.50,target:76.00,strategy:'yes',date:'2026-04-10',live:false},
+  {ticker:'UBER',name:'Uber Technologies',sector:'Tech / AI / Semis',shares:50,entry:45.25,current:72.55,stop:0,target:0,strategy:'no',date:'2021-05-04',live:false},
+  {ticker:'EXPI',name:'eXp World Holdings',sector:'Real Estate / REITs',shares:105,entry:40.50,current:6.09,stop:0,target:0,strategy:'no',date:'2021-02-17',live:false},
+];
+
+const DEFAULT_PARAMS = [
+  ['Capital deployed','$24,000'],['Monthly return target','3–4% per month'],
+  ['Maximum loss guardrail','$4,800 (20% of capital)'],['Max open positions','2 — always different sectors'],
+  ['Stop-loss per position','Hard 15% below entry · GTC order set immediately'],
+  ['Partial profit target','+8–10% · sell 50%, trail remaining 50%'],
+  ['Review cadence','Friday 2 PM CT + Monday 9:30 AM CT — every week'],
+  ['Strategy review','October 2026 (6 months from lock date)'],
+  ['Platforms','Etrade.com and Fidelity.com'],
+];
+
+const GATES = [
+  {num:'Gate 0',cls:'gate0',name:'Data completeness',cond:'All 7 data points confirmed before any other analysis. <strong>Missing data = disqualified. Conflicting data = disqualified.</strong> Your addition — non-negotiable.'},
+  {num:'Gate 1',cls:'gate1',name:'Macro environment clear',cond:'No active geopolitical, policy, or macro catalyst <strong>directly threatening the thesis.</strong> Example: Iran ceasefire collapse triggers Gate 1 review on DAL immediately.'},
+  {num:'Gate 2',cls:'gate2',name:'10%+ upside to target',cond:'Current price must be <strong>at least 10% below</strong> average analyst consensus price target. At or above target = bad risk/reward = disqualified.'},
+  {num:'Gate 3',cls:'gate3',name:'Analyst majority bullish',cond:'At least <strong>3 of 4 sources</strong> (Morgan Stanley, TipRanks, Argus, Refinitiv) must carry Buy or Overweight. Majority Hold = disqualified.'},
+  {num:'Gate 4',cls:'gate4',name:'No earnings within 3 weeks',cond:'Earnings within 3 weeks = unhedged binary risk without options. Exception only if <strong>5+ consecutive beats</strong> on record.'},
+  {num:'Gate 5',cls:'gate5',name:'Stop-loss pre-defined',cond:'<strong>Hard 15% stop below entry</strong> must be set as a GTC order the moment the position fills. No stop = no trade.'},
+];
+
+const RULES = [
+  {icon:'✕',cls:'r',title:'Never buy into earnings',body:'No entry within 3 weeks of earnings unless 5+ consecutive beats. Earnings without options = coin flip.'},
+  {icon:'✕',cls:'r',title:'Never chase above target',body:'If price is at or above the average analyst target — wait. The risk/reward is already unfavorable.'},
+  {icon:'✕',cls:'r',title:'Never present incomplete data',body:'Gate 0 failure = stock never shown. Missing data is a red flag, not an inconvenience.'},
+  {icon:'✕',cls:'r',title:'Never run same-sector positions',body:'Two open positions must always be from different sector buckets. No exceptions.'},
+  {icon:'✓',cls:'g',title:'Always pre-set the stop-loss',body:'GTC stop at 15% below entry, set on platform the moment the order fills.'},
+  {icon:'✓',cls:'g',title:'Take partials at +8–10%',body:'Sell 50% at Target 1. Move stop to breakeven on the rest. Never let a winner become a loser.'},
+  {icon:'↺',cls:'a',title:'Exit before entering',body:'Close old position fully before entering any replacement. Never run 3 positions simultaneously.'},
+  {icon:'↺',cls:'a',title:'Wait 1 week after stop hit',body:'A stop means the market disagreed. One week to reassess before redeploying capital.'},
+  {icon:'↺',cls:'a',title:'Re-evaluate every review cycle',body:'Friday and Monday — every week. Thesis must hold through every cycle or we exit.'},
+  {icon:'◉',cls:'b',title:'No FOMO entries',body:'If the primary move already happened, wait for the next clean setup. Never chase a run.'},
+  {icon:'◉',cls:'b',title:'Track win rate every review',body:'Record every exit — profit or loss — and the reason. Data informs the October 2026 review.'},
+  {icon:'◉',cls:'b',title:'Document every exit reason',body:'This is how the strategy gets smarter over time. No undocumented exits.'},
+];
+
+const SECTORS = [
+  {name:'Tech / AI / Semis',status:'held',note:'MU held'},
+  {name:'Travel / Airlines',status:'held',note:'DAL held'},
+  {name:'Energy / Oil & Gas',status:'free',note:'OXY watch post-May 5'},
+  {name:'Healthcare / Biotech',status:'free',note:'Defensive + growth'},
+  {name:'Financials / Banks',status:'free',note:'Rate-sensitive'},
+  {name:'Real Estate / REITs',status:'free',note:'INVH watch $28–$30'},
+  {name:'Defense / Aerospace',status:'free',note:'Geopolitical play'},
+  {name:'Consumer / Retail',status:'free',note:'NKE 57% discount'},
+  {name:'Clean Energy',status:'free',note:'BEP re-entry watch'},
+];
+
+const SOURCES = [
+  {name:'Morningstar',what:'Fair value, moat rating, star rating, sector outlook'},
+  {name:'Zacks',what:'Momentum Score A–F, earnings estimate revisions, Rank #1–5'},
+  {name:'TipRanks',what:'Analyst consensus, price targets, social sentiment %, earnings calendar'},
+  {name:'Etrade / Fidelity',what:'Morgan Stanley, Argus, Refinitiv, Market Edge ratings'},
+  {name:'SEC Filings / 8-K',what:'Confirmed earnings dates, guidance, material events'},
+  {name:'Yahoo Finance / Investing.com',what:'Live price, 52-week range, volume, pre-market data'},
+  {name:'Stockanalysis.com',what:'Short interest %, institutional ownership trend, float'},
+  {name:'Sector ETFs',what:'SMH (semis), JETS (airlines) — Monday pre-market context'},
+  {name:'Live Web Search',what:'Breaking news, ceasefire updates, catalyst changes'},
+];
+
+const DEFAULT_LOG = [
+  {date:'Apr 10, 2026',type:'Lock',version:'v1.0',changes:'Initial framework locked. 6-gate system, 5 analysis layers, hard rules, data sources.',next:'Oct 2026'},
+  {date:'Apr 10, 2026',type:'Update',version:'v1.1',changes:'Bi-weekly review cadence, sector diversification rule, prompt system, N8N integration, alert setup guide.',next:'Oct 2026'},
+];
+
+let portfolio = [];
+let params = [];
+let log = [];
+let editIdx = -1;
+let selectedApi = 'yahoo';
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function init() {
+  try { portfolio = JSON.parse(localStorage.getItem(SK)) || [...DEFAULT_PORTFOLIO]; } catch(e) { portfolio = [...DEFAULT_PORTFOLIO]; }
+  try { params = JSON.parse(localStorage.getItem(SK_FW+'_params')) || DEFAULT_PARAMS.map(p=>[...p]); } catch(e) { params = DEFAULT_PARAMS.map(p=>[...p]); }
+  try { log = JSON.parse(localStorage.getItem(SK_FW+'_log')) || [...DEFAULT_LOG]; } catch(e) { log = [...DEFAULT_LOG]; }
+  renderAll();
+}
+
+function save() {
+  try { localStorage.setItem(SK, JSON.stringify(portfolio)); } catch(e) {}
+  try { localStorage.setItem(SK_FW+'_params', JSON.stringify(params)); } catch(e) {}
+  try { localStorage.setItem(SK_FW+'_log', JSON.stringify(log)); } catch(e) {}
+}
+
+function renderAll() {
+  renderStats();
+  renderRows();
+  renderPrompt();
+  renderPayload();
+  renderGates();
+  renderRules();
+  renderParams();
+  renderSectors();
+  renderSources();
+  renderLog();
+}
+
+// ═══════════════════════════════════════════
+// PAGE SWITCH
+// ═══════════════════════════════════════════
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════
+function renderStats() {
+  let cost=0, val=0, active=0;
+  portfolio.forEach(p => { cost += p.entry*p.shares; val += p.current*p.shares; if(p.strategy==='yes') active++; });
+  const gain = val-cost, pct = cost>0 ? gain/cost*100 : 0;
+  document.getElementById('s-value').textContent = '$'+val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('s-gain').textContent = (gain>=0?'+':'')+gain.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2,style:'currency',currency:'USD'}).replace('$','$');
+  document.getElementById('s-gain').className = 'stat-val '+(gain>=0?'g':'r');
+  document.getElementById('s-gainpct').textContent = (pct>=0?'+':'')+pct.toFixed(2)+'% overall';
+  document.getElementById('s-active').textContent = active;
+}
+
+// ═══════════════════════════════════════════
+// PORTFOLIO ROWS
+// ═══════════════════════════════════════════
+function getStatus(p) {
+  if(p.strategy==='no') return {cls:'b-gray',label:'Legacy'};
+  const pct=(p.current-p.entry)/p.entry*100;
+  if(p.stop>0 && p.current<=p.stop*1.04) return {cls:'b-red',label:'Near stop'};
+  if(pct>=8) return {cls:'b-amber',label:'Take partial'};
+  if(pct<0) return {cls:'b-red',label:'Watch'};
+  return {cls:'b-green',label:'Hold'};
+}
+
+function stopPct(p) {
+  if(!p.stop||!p.entry) return 50;
+  const range=p.entry-p.stop, cur=p.current-p.stop;
+  return Math.min(100,Math.max(0,(cur/(range*1.5))*100));
+}
+
+function renderRows() {
+  const c = document.getElementById('portfolioRows');
+  c.innerHTML = '';
+  portfolio.forEach((p,i) => {
+    const gain=(p.current-p.entry)*p.shares;
+    const gpct=(p.current-p.entry)/p.entry*100;
+    const st=getStatus(p);
+    const sp=stopPct(p);
+    const dot = p.live ? '<span class="price-live-dot" title="Live price"></span>' : '<span class="price-stale-dot" title="Manual price"></span>';
+    const row = document.createElement('div');
+    row.className='prow';
+    row.innerHTML=`
+      <div class="ptd"><span class="ticker-text">${p.ticker}</span></div>
+      <div class="ptd"><div class="name-text">${p.name}</div><div class="sector-text">${p.sector}</div></div>
+      <div class="ptd mono">$${p.entry.toFixed(2)}</div>
+      <div class="ptd"><div class="price-cell">${dot}<span class="mono">${p.current.toFixed(2)}</span></div></div>
+      <div class="ptd mono ${gpct>=0?'g':'r'}">${gpct>=0?'+':''}${gpct.toFixed(2)}%</div>
+      <div class="ptd mono ${gain>=0?'g':'r'}">${gain>=0?'+':'-'}$${Math.abs(gain).toFixed(0)}</div>
+      <div class="ptd">${p.stop>0?`<div class="stop-wrap"><div class="stop-track"><div class="stop-fill" style="width:${sp}%"></div></div><div style="font-family:var(--mono);font-size:9px;color:var(--muted);">$${p.stop.toFixed(2)}</div></div>`:'<span style="color:var(--hint);font-size:10px;">Not set</span>'}</div>
+      <div class="ptd mono" style="color:var(--green2)">${p.target>0?'$'+p.target.toFixed(2):'—'}</div>
+      <div class="ptd"><span class="badge ${st.cls}">${st.label}</span></div>
+      <div class="ptd"><button class="edit-btn" onclick="openEdit(${i})">Edit</button></div>
+    `;
+    c.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════
+// LIVE PRICE FETCHING
+// ═══════════════════════════════════════════
+function selectApi(api) {
+  selectedApi = api;
+  document.querySelectorAll('.api-option').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('api-'+api).classList.add('selected');
+  const keyRow = document.getElementById('apiKeyRow');
+  const note = document.getElementById('apiNote');
+  if(api==='yahoo') {
+    keyRow.style.display='none';
+    note.innerHTML='Yahoo Finance via CORS proxy — no account needed. If blocked, try <a href="https://allorigins.win/" target="_blank">allorigins.win</a> as the proxy.';
+  } else if(api==='finnhub') {
+    keyRow.style.display='flex';
+    document.getElementById('apiKeyInput').placeholder='Finnhub API key — get free at finnhub.io';
+    note.innerHTML='Get a free API key at <a href="https://finnhub.io" target="_blank">finnhub.io</a>. Free tier: 60 calls/minute. Real-time US stock quotes included.';
+  } else {
+    keyRow.style.display='flex';
+    document.getElementById('apiKeyInput').placeholder='Alpha Vantage API key — get free at alphavantage.co';
+    note.innerHTML='Get a free API key at <a href="https://www.alphavantage.co" target="_blank">alphavantage.co</a>. Free tier: 25 requests/day. Good for daily reviews.';
+  }
+  const savedKey = localStorage.getItem('inv_apikey_'+api);
+  if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
+}
+
+async function fetchAllPrices() {
+  const btn = document.getElementById('fetchAllBtn');
+  const navBtn = document.getElementById('fetchBtn');
+  const dot = document.getElementById('priceDot');
+  const status = document.getElementById('priceStatus');
+
+  btn.disabled=true; btn.textContent='Fetching...';
+  navBtn.classList.add('loading'); navBtn.textContent='Fetching...';
+  status.textContent='Fetching live prices...';
+
+  const apiKey = document.getElementById('apiKeyInput')?.value?.trim();
+  if(apiKey) localStorage.setItem('inv_apikey_'+selectedApi, apiKey);
+
+  const tickers = portfolio.map(p=>p.ticker);
+  let fetched=0, failed=[];
+
+  for(const ticker of tickers) {
+    try {
+      let price = null;
+      if(selectedApi==='yahoo') price = await fetchYahoo(ticker);
+      else if(selectedApi==='finnhub') price = await fetchFinnhub(ticker, apiKey);
+      else price = await fetchAlphaVantage(ticker, apiKey);
+
+      if(price && price > 0) {
+        const idx = portfolio.findIndex(p=>p.ticker===ticker);
+        if(idx>=0) { portfolio[idx].current=price; portfolio[idx].live=true; fetched++; }
+      } else { failed.push(ticker); }
+    } catch(e) { failed.push(ticker); }
+    await new Promise(r=>setTimeout(r,300));
+  }
+
+  save(); renderAll();
+  btn.disabled=false; btn.textContent='Fetch all prices';
+  navBtn.classList.remove('loading'); navBtn.textContent='Refresh prices';
+
+  if(fetched>0) {
+    dot.className='price-dot live';
+    status.textContent=`Live · ${fetched}/${tickers.length} updated · ${new Date().toLocaleTimeString()}`;
+  } else {
+    dot.className='price-dot';
+    status.textContent=`Prices: manual (fetch failed)`;
+  }
+
+  if(failed.length>0) {
+    document.getElementById('outputBody').innerHTML=`<div style="color:var(--amber2);font-size:12px;padding:8px 0;">
+      Could not fetch prices for: <strong>${failed.join(', ')}</strong>.<br>
+      For Yahoo Finance, CORS proxies are sometimes temporarily blocked. Try refreshing or switching to Finnhub/Alpha Vantage with an API key.</div>`;
+  }
+}
+
+async function fetchYahoo(ticker) {
+  const proxy = document.getElementById('corsProxy').value.trim() || 'https://corsproxy.io/?';
+  const url = `${proxy}${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range=1d')}`;
+  const res = await fetch(url, {headers:{'User-Agent':'Mozilla/5.0'}});
+  if(!res.ok) throw new Error('Yahoo failed');
+  const data = await res.json();
+  return data?.chart?.result?.[0]?.meta?.regularMarketPrice || null;
+}
+
+async function fetchFinnhub(ticker, apiKey) {
+  if(!apiKey) throw new Error('No API key');
+  const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
+  if(!res.ok) throw new Error('Finnhub failed');
+  const data = await res.json();
+  return data?.c || null;
+}
+
+async function fetchAlphaVantage(ticker, apiKey) {
+  if(!apiKey) throw new Error('No API key');
+  const res = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`);
+  if(!res.ok) throw new Error('AV failed');
+  const data = await res.json();
+  return parseFloat(data?.['Global Quote']?.['05. price']) || null;
+}
+
+// ═══════════════════════════════════════════
+// PROMPT + REVIEW
+// ═══════════════════════════════════════════
+function buildPrompt(reviewType) {
+  const dateStr = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const strategy = portfolio.filter(p=>p.strategy==='yes');
+  const legacy = portfolio.filter(p=>p.strategy==='no');
+  let prompt = `${reviewType} — ${dateStr}\n\n`;
+  if(strategy.length>0) {
+    prompt += 'Strategy positions:\n';
+    strategy.forEach(p=>{
+      const gpct=((p.current-p.entry)/p.entry*100);
+      prompt += `• ${p.ticker} (${p.name}) — entry $${p.entry.toFixed(2)}, now $${p.current.toFixed(2)} (${gpct>=0?'+':''}${gpct.toFixed(2)}%), stop GTC $${p.stop>0?p.stop.toFixed(2):'not set'}, target $${p.target>0?p.target.toFixed(2):'TBD'}, ${p.shares} shares${p.live?' [live price]':''}\n`;
+    });
+  }
+  if(legacy.length>0) {
+    prompt += '\nLegacy positions (not strategy):\n';
+    legacy.forEach(p=>{
+      const gpct=((p.current-p.entry)/p.entry*100);
+      prompt += `• ${p.ticker} — ${p.shares} shares @ $${p.entry.toFixed(2)}, now $${p.current.toFixed(2)} (${gpct>=0?'+':''}${gpct.toFixed(2)}%)\n`;
+    });
+  }
+  prompt += '\nPlease run the full framework review: Phase 1 health check on all strategy positions, Phase 2 decision (Hold / Take partial / Tighten stop / Exit) for each, and Phase 3 new sector scan if any position was exited or cash is available. Check current macro conditions, analyst changes, oil price, and any news that affects the thesis on any held position.';
+  return prompt;
+}
+
+function renderPrompt() {
+  document.getElementById('promptBox').textContent = buildPrompt('Review');
+}
+
+function copyPrompt() {
+  navigator.clipboard.writeText(document.getElementById('promptBox').textContent);
+  const btn = document.querySelector('.copy-prompt-btn');
+  const orig = btn.textContent;
+  btn.textContent='Copied!'; btn.style.color='var(--green2)';
+  setTimeout(()=>{btn.textContent=orig;btn.style.color='';},1500);
+}
+
+function runReview(type) {
+  const prompt = buildPrompt(type+' review');
+  document.getElementById('promptBox').textContent = prompt;
+  document.getElementById('loadingBar').classList.add('on');
+  document.getElementById('outputBody').innerHTML=`<div style="color:var(--muted);font-size:12px;">${type} review prompt generated...</div>`;
+  document.getElementById('outputTime').textContent = type+' · '+new Date().toLocaleTimeString();
+  setTimeout(()=>{
+    document.getElementById('loadingBar').classList.remove('on');
+    document.getElementById('outputBody').innerHTML=`
+      <div style="padding:10px 12px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.15);border-radius:8px;margin-bottom:12px;color:var(--green2);font-size:12px;">
+        <strong>${type} review prompt ready.</strong> Copy the prompt above and paste into Claude to run the full 6-gate framework analysis.
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8;">
+        Included in prompt:<br>
+        &bull; All strategy positions with live/manual prices, entry, stop, target<br>
+        &bull; Gain/loss % auto-calculated<br>
+        &bull; Request for Phase 1 health check + Phase 2 decision + Phase 3 scan<br>
+        &bull; ${type} review framing with today's date<br><br>
+        <strong style="color:var(--text);">Next:</strong> Copy prompt above &rarr; paste into Claude &rarr; full framework review runs automatically.
+      </div>`;
+  },1000);
+}
+
+function simulateN8N() {
+  document.getElementById('loadingBar').classList.add('on');
+  document.getElementById('outputTime').textContent = 'N8N sim · '+new Date().toLocaleTimeString();
+  setTimeout(()=>{
+    document.getElementById('loadingBar').classList.remove('on');
+    document.getElementById('outputBody').innerHTML=`
+      <div style="padding:10px 12px;background:rgba(234,88,12,.07);border:1px solid rgba(234,88,12,.2);border-radius:8px;margin-bottom:12px;color:#fb923c;font-size:12px;">
+        <strong>N8N trigger simulated.</strong> Payload generated. See the N8N section below for setup instructions.
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8;">
+        In a live N8N workflow:<br>
+        &bull; Schedule Trigger fires Monday 8:30 AM CT + Friday 1:30 PM CT<br>
+        &bull; HTTP Request fetches current prices from Yahoo/Finnhub<br>
+        &bull; Code node builds the review prompt with live prices<br>
+        &bull; Claude API call runs the full 6-gate review<br>
+        &bull; Email / Telegram delivers the output to your inbox automatically<br>
+      </div>`;
+  },1200);
+}
+
+// ═══════════════════════════════════════════
+// N8N PAYLOAD
+// ═══════════════════════════════════════════
+function renderPayload() {
+  const strategy = portfolio.filter(p=>p.strategy==='yes');
+  const payload = {
+    review_type:"auto",triggered_by:"n8n_schedule",
+    timestamp:new Date().toISOString(),
+    positions:strategy.map(p=>({ticker:p.ticker,entry:p.entry,current:p.current,shares:p.shares,stop:p.stop,target:p.target,sector:p.sector}))
+  };
+  const raw = JSON.stringify(payload,null,2);
+  document.getElementById('payloadView').innerHTML = raw
+    .replace(/"([^"]+)":/g,'<span class="pk">"$1"</span>:')
+    .replace(/: "([^"]+)"/g,': <span class="ps">"$1"</span>')
+    .replace(/: ([\d.]+)/g,': <span class="pn">$1</span>');
+}
+
+function copyWH() {
+  navigator.clipboard.writeText(document.getElementById('webhookUrl').value);
+}
+
+function copyPayload() {
+  const strategy=portfolio.filter(p=>p.strategy==='yes');
+  const payload={review_type:"auto",triggered_by:"n8n_schedule",timestamp:new Date().toISOString(),positions:strategy.map(p=>({ticker:p.ticker,entry:p.entry,current:p.current,shares:p.shares,stop:p.stop,target:p.target,sector:p.sector}))};
+  navigator.clipboard.writeText(JSON.stringify(payload,null,2));
+}
+
+// ═══════════════════════════════════════════
+// FRAMEWORK PAGE RENDERS
+// ═══════════════════════════════════════════
+function renderGates() {
+  const c=document.getElementById('gatesGrid'); c.innerHTML='';
+  GATES.forEach(g=>{
+    const d=document.createElement('div');
+    d.className=`gate-card ${g.cls}`;
+    d.innerHTML=`<div class="gate-num">${g.num}</div><div class="gate-name">${g.name}</div><div class="gate-cond">${g.cond}</div>`;
+    c.appendChild(d);
+  });
+}
+
+function renderRules() {
+  const c=document.getElementById('rulesGrid'); c.innerHTML='';
+  RULES.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='rule-item';
+    d.innerHTML=`<div class="rule-icon ${r.cls}">${r.icon}</div><div class="rule-text"><strong>${r.title}</strong>${r.body}</div>`;
+    c.appendChild(d);
+  });
+}
+
+function renderParams() {
+  const c=document.getElementById('paramTable'); c.innerHTML='';
+  const head=document.createElement('div'); head.className='param-head';
+  head.innerHTML='<div class="param-th">Parameter</div><div class="param-th">Value — click to edit</div>';
+  c.appendChild(head);
+  params.forEach((p,i)=>{
+    const row=document.createElement('div'); row.className='param-row';
+    const key=document.createElement('div'); key.className='param-key'; key.textContent=p[0];
+    const val=document.createElement('div'); val.className='param-val';
+    const input=document.createElement('input'); input.className='inline-edit';
+    input.value=p[1]; input.addEventListener('change',()=>{params[i][1]=input.value;save();});
+    val.appendChild(input);
+    row.appendChild(key); row.appendChild(val); c.appendChild(row);
+  });
+}
+
+function renderSectors() {
+  const c=document.getElementById('sectorGrid'); c.innerHTML='';
+  const held=portfolio.filter(p=>p.strategy==='yes').map(p=>p.sector);
+  SECTORS.forEach(s=>{
+    const isHeld=held.includes(s.name);
+    const d=document.createElement('div'); d.className='sector-item';
+    d.innerHTML=`<div><div class="sector-name">${s.name}</div><div style="font-size:10px;color:var(--hint);">${s.note}</div></div><div class="sector-status ${isHeld?'sector-held':'sector-free'}">${isHeld?'● HELD':'○ free'}</div>`;
+    c.appendChild(d);
+  });
+}
+
+function renderSources() {
+  const c=document.getElementById('sourcesGrid'); c.innerHTML='';
+  SOURCES.forEach(s=>{
+    const d=document.createElement('div'); d.className='source-item';
+    d.innerHTML=`<div class="source-name">${s.name}</div><div class="source-what">${s.what}</div>`;
+    c.appendChild(d);
+  });
+}
+
+function renderLog() {
+  const c=document.getElementById('reviewLog'); c.innerHTML='';
+  log.forEach(l=>{
+    const row=document.createElement('div'); row.className='log-row';
+    row.innerHTML=`<div class="log-td highlight">${l.date}</div><div class="log-td"><span class="badge ${l.type==='Lock'?'b-green':l.type==='Update'?'b-blue':'b-amber'}">${l.type}</span></div><div class="log-td">${l.version}</div><div class="log-td">${l.changes}</div><div class="log-td">${l.next}</div>`;
+    c.appendChild(row);
+  });
+}
+
+function addLogEntry() {
+  const date=prompt('Date (e.g. Apr 14, 2026):',''); if(!date) return;
+  const type=prompt('Type (Lock / Update / Review):','Review'); if(!type) return;
+  const version=prompt('Version (e.g. v1.2):','v1.1'); if(!version) return;
+  const changes=prompt('Changes made:',''); if(!changes) return;
+  const next=prompt('Next review date:','Oct 2026'); if(!next) return;
+  log.push({date,type,version,changes,next}); save(); renderLog();
+}
+
+function exportFramework() {
+  const strategy=portfolio.filter(p=>p.strategy==='yes');
+  const content=`INVESTMENT RESEARCH FRAMEWORK — ${new Date().toLocaleDateString()}\n${'='.repeat(60)}\n\nPORTFOLIO PARAMETERS\n${params.map(p=>`${p[0]}: ${p[1]}`).join('\n')}\n\nSTRATEGY POSITIONS\n${strategy.map(p=>`${p.ticker} — entry $${p.entry}, current $${p.current}, stop $${p.stop}, target $${p.target}, ${p.shares} shares`).join('\n')}\n\nTHE 6-GATE SYSTEM\n${GATES.map(g=>`${g.num} — ${g.name}: ${g.cond.replace(/<[^>]+>/g,'')}`).join('\n\n')}\n\nHARD RULES\n${RULES.map(r=>`${r.title}: ${r.body}`).join('\n')}\n\nREVIEW LOG\n${log.map(l=>`${l.date} | ${l.type} | ${l.version} | ${l.changes}`).join('\n')}`;
+  const blob=new Blob([content],{type:'text/plain'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='Investment_Framework_v1.1_'+new Date().toISOString().split('T')[0]+'.txt';
+  a.click();
+}
+
+// ═══════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════
+function openEdit(i) {
+  editIdx=i; const p=portfolio[i];
+  document.getElementById('modalTitle').textContent='Edit — '+p.ticker;
+  document.getElementById('f-ticker').value=p.ticker;
+  document.getElementById('f-name').value=p.name;
+  document.getElementById('f-sector').value=p.sector;
+  document.getElementById('f-shares').value=p.shares;
+  document.getElementById('f-entry').value=p.entry;
+  document.getElementById('f-current').value=p.current;
+  document.getElementById('f-stop').value=p.stop||'';
+  document.getElementById('f-target').value=p.target||'';
+  document.getElementById('f-strategy').value=p.strategy;
+  document.getElementById('f-date').value=p.date||'';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function openAdd() {
+  editIdx=-1;
+  document.getElementById('modalTitle').textContent='Add position';
+  ['ticker','name','shares','entry','current','stop','target'].forEach(f=>document.getElementById('f-'+f).value='');
+  document.getElementById('f-sector').value='Tech / AI / Semis';
+  document.getElementById('f-strategy').value='yes';
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModalOut(e) { if(e.target===document.getElementById('modalOverlay')) closeModal(); }
+
+function savePosition() {
+  const p={
+    ticker:document.getElementById('f-ticker').value.toUpperCase().trim(),
+    name:document.getElementById('f-name').value.trim(),
+    sector:document.getElementById('f-sector').value,
+    shares:parseFloat(document.getElementById('f-shares').value)||0,
+    entry:parseFloat(document.getElementById('f-entry').value)||0,
+    current:parseFloat(document.getElementById('f-current').value)||0,
+    stop:parseFloat(document.getElementById('f-stop').value)||0,
+    target:parseFloat(document.getElementById('f-target').value)||0,
+    strategy:document.getElementById('f-strategy').value,
+    date:document.getElementById('f-date').value,
+    live:false
+  };
+  if(!p.ticker||!p.entry) return;
+  if(editIdx>=0) portfolio[editIdx]=p; else portfolio.push(p);
+  save(); renderAll(); closeModal();
+}
+
+init();
+</script>
+</body>
+</html>
