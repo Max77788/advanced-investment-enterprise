@@ -308,34 +308,24 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
   <!-- Live Price API -->
   <div class="section-title">Live price feed</div>
   <div class="api-card">
-    <div class="api-grid">
-      <div class="api-option selected" id="api-yahoo" onclick="selectApi('yahoo')">
-        <div class="api-name">Yahoo Finance</div>
-        <div class="api-desc">Via CORS proxy — no API key needed</div>
-        <div class="api-tag api-free">Free · No key required</div>
-      </div>
-      <div class="api-option" id="api-finnhub" onclick="selectApi('finnhub')">
+    <div class="api-grid" style="grid-template-columns:1fr;">
+      <div class="api-option selected" id="api-finnhub">
         <div class="api-name">Finnhub</div>
         <div class="api-desc">Real-time quotes, free tier available</div>
         <div class="api-tag api-key">Free · API key required</div>
       </div>
-      <div class="api-option" id="api-alphavantage" onclick="selectApi('alphavantage')">
-        <div class="api-name">Alpha Vantage</div>
-        <div class="api-desc">Free tier, 25 requests/day limit</div>
-        <div class="api-tag api-key">Free · API key required</div>
-      </div>
     </div>
-    <div class="api-row" id="apiKeyRow" style="display:none; margin-bottom:10px;">
-      <input class="api-input" id="apiKeyInput" placeholder="Paste your API key here — saved locally" />
+    <div class="api-row" id="apiKeyRow" style="display:flex; margin-bottom:10px;">
+      <input class="api-input" id="apiKeyInput" value="cml96p9r01qmnetgmqhgcml96p9r01qmnetgmqi0" placeholder="Finnhub API key — saved locally" />
+    </div>
+    <div class="api-row" style="display:none;">
+      <input class="api-input" id="corsProxy" value="https://api.allorigins.win/raw?url=" placeholder="CORS proxy prefix (Yahoo) — tries fallbacks if this fails" />
     </div>
     <div class="api-row">
-      <input class="api-input" id="corsProxy" value="https://api.allorigins.win/raw?url=" placeholder="CORS proxy prefix (Yahoo) — tries fallbacks if this fails" />
       <button class="fetch-all-btn" id="fetchAllBtn" onclick="fetchAllPrices()">Fetch all prices</button>
     </div>
     <div class="api-note" style="margin-top:10px;" id="apiNote">
-      Yahoo Finance needs a CORS mirror from the browser. The app tries several automatically after your prefix.
-      No account needed. If nothing works, switch to Finnhub (free key, direct from browser).
-      For Finnhub / Alpha Vantage, get a free key at their site and paste it above.
+      Finnhub only mode is enabled for maximum reliability. Your API key is prefilled and saved locally.
     </div>
   </div>
 
@@ -632,7 +622,8 @@ let portfolio = [];
 let params = [];
 let log = [];
 let editIdx = -1;
-let selectedApi = 'yahoo';
+let selectedApi = 'finnhub';
+const DEFAULT_FINNHUB_KEY = 'cml96p9r01qmnetgmqhgcml96p9r01qmnetgmqi0';
 
 // ═══════════════════════════════════════════
 // INIT
@@ -642,9 +633,12 @@ function init() {
   try { params = JSON.parse(localStorage.getItem(SK_FW+'_params')) || DEFAULT_PARAMS.map(p=>[...p]); } catch(e) { params = DEFAULT_PARAMS.map(p=>[...p]); }
   try { log = JSON.parse(localStorage.getItem(SK_FW+'_log')) || [...DEFAULT_LOG]; } catch(e) { log = [...DEFAULT_LOG]; }
   renderAll();
-  const savedApi = localStorage.getItem('inv_selected_api');
-  if (savedApi && ['yahoo','finnhub','alphavantage'].includes(savedApi)) selectApi(savedApi);
-  else selectApi(selectedApi);
+  selectApi('finnhub');
+  const keyInput = document.getElementById('apiKeyInput');
+  if (keyInput && !keyInput.value.trim()) keyInput.value = DEFAULT_FINNHUB_KEY;
+  const savedKey = (localStorage.getItem('inv_apikey_finnhub') || '').trim();
+  if (!savedKey) localStorage.setItem('inv_apikey_finnhub', DEFAULT_FINNHUB_KEY);
+  if (keyInput && savedKey) keyInput.value = savedKey;
 }
 
 function save() {
@@ -739,26 +733,19 @@ function renderRows() {
 // LIVE PRICE FETCHING
 // ═══════════════════════════════════════════
 function selectApi(api) {
-  selectedApi = api;
-  try { localStorage.setItem('inv_selected_api', api); } catch(_) {}
+  selectedApi = 'finnhub';
+  try { localStorage.setItem('inv_selected_api', 'finnhub'); } catch(_) {}
   document.querySelectorAll('.api-option').forEach(el=>el.classList.remove('selected'));
-  document.getElementById('api-'+api).classList.add('selected');
+  const finnhubCard = document.getElementById('api-finnhub');
+  if (finnhubCard) finnhubCard.classList.add('selected');
   const keyRow = document.getElementById('apiKeyRow');
   const note = document.getElementById('apiNote');
-  if(api==='yahoo') {
-    keyRow.style.display='none';
-    note.innerHTML='Yahoo uses your proxy prefix first, then built-in mirrors (allorigins, corsproxy, codetabs). No account needed. Finnhub is the most reliable free option (API key, no proxy).';
-  } else if(api==='finnhub') {
-    keyRow.style.display='flex';
-    document.getElementById('apiKeyInput').placeholder='Finnhub API key — get free at finnhub.io';
-    note.innerHTML='Get a free API key at <a href="https://finnhub.io" target="_blank">finnhub.io</a>. Free tier: 60 calls/minute. Real-time US stock quotes included.';
-  } else {
-    keyRow.style.display='flex';
-    document.getElementById('apiKeyInput').placeholder='Alpha Vantage API key — get free at alphavantage.co';
-    note.innerHTML='Get a free API key at <a href="https://www.alphavantage.co" target="_blank">alphavantage.co</a>. Free tier: 25 requests/day. Good for daily reviews.';
-  }
-  const savedKey = localStorage.getItem('inv_apikey_'+api);
-  if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
+  if (keyRow) keyRow.style.display = 'flex';
+  const keyInput = document.getElementById('apiKeyInput');
+  if (keyInput) keyInput.placeholder = 'Finnhub API key — get free at finnhub.io';
+  if (note) note.innerHTML = 'Finnhub only mode is enabled for maximum reliability. Update key above anytime.';
+  const savedKey = (localStorage.getItem('inv_apikey_finnhub') || '').trim();
+  if (keyInput) keyInput.value = savedKey || DEFAULT_FINNHUB_KEY;
 }
 
 const FETCH_TIMEOUT_MS = 6500;
@@ -811,21 +798,9 @@ async function firstValidResult(items, worker, concurrency = 3) {
 }
 
 async function resolvePriceWithFallback(ticker, preferredApi, preferredKey) {
-  const keyFinnhub = (localStorage.getItem('inv_apikey_finnhub') || '').trim();
-  const keyAlpha = (localStorage.getItem('inv_apikey_alphavantage') || '').trim();
-  const chain = preferredApi === 'yahoo'
-    ? [{ api: 'yahoo', key: null }, { api: 'finnhub', key: keyFinnhub }, { api: 'alphavantage', key: keyAlpha }]
-    : preferredApi === 'finnhub'
-      ? [{ api: 'finnhub', key: preferredKey || keyFinnhub }, { api: 'alphavantage', key: keyAlpha }, { api: 'yahoo', key: null }]
-      : [{ api: 'alphavantage', key: preferredKey || keyAlpha }, { api: 'finnhub', key: keyFinnhub }, { api: 'yahoo', key: null }];
-
-  for (const source of chain) {
-    let p = null;
-    if (source.api === 'yahoo') p = await fetchYahoo(ticker);
-    else if (source.api === 'finnhub') p = await fetchFinnhub(ticker, source.key);
-    else p = await fetchAlphaVantage(ticker, source.key);
-    if (p != null && Number(p) > 0) return { price: Number(p), source: source.api };
-  }
+  const keyFinnhub = (preferredKey || localStorage.getItem('inv_apikey_finnhub') || DEFAULT_FINNHUB_KEY || '').trim();
+  const p = await fetchFinnhub(ticker, keyFinnhub);
+  if (p != null && Number(p) > 0) return { price: Number(p), source: 'finnhub' };
   return null;
 }
 
@@ -839,7 +814,7 @@ async function fetchAllPrices() {
   if (navBtn) { navBtn.classList.add('loading'); navBtn.textContent = 'Fetching...'; }
   if (status) status.textContent = 'Fetching live prices...';
 
-  const apiKey = document.getElementById('apiKeyInput')?.value?.trim();
+  const apiKey = document.getElementById('apiKeyInput')?.value?.trim() || DEFAULT_FINNHUB_KEY;
   if (apiKey) localStorage.setItem('inv_apikey_'+selectedApi, apiKey);
 
   const tickers = portfolio.map(p => p.ticker);
