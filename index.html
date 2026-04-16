@@ -642,6 +642,9 @@ function init() {
   try { params = JSON.parse(localStorage.getItem(SK_FW+'_params')) || DEFAULT_PARAMS.map(p=>[...p]); } catch(e) { params = DEFAULT_PARAMS.map(p=>[...p]); }
   try { log = JSON.parse(localStorage.getItem(SK_FW+'_log')) || [...DEFAULT_LOG]; } catch(e) { log = [...DEFAULT_LOG]; }
   renderAll();
+  const savedApi = localStorage.getItem('inv_selected_api');
+  if (savedApi && ['yahoo','finnhub','alphavantage'].includes(savedApi)) selectApi(savedApi);
+  else selectApi(selectedApi);
 }
 
 function save() {
@@ -737,6 +740,7 @@ function renderRows() {
 // ═══════════════════════════════════════════
 function selectApi(api) {
   selectedApi = api;
+  try { localStorage.setItem('inv_selected_api', api); } catch(_) {}
   document.querySelectorAll('.api-option').forEach(el=>el.classList.remove('selected'));
   document.getElementById('api-'+api).classList.add('selected');
   const keyRow = document.getElementById('apiKeyRow');
@@ -757,6 +761,74 @@ function selectApi(api) {
   if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
 }
 
+const FETCH_TIMEOUT_MS = 6500;
+const PRICE_FETCH_CONCURRENCY = 4;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function normalizeTicker(ticker) {
+  return String(ticker || '').trim().toUpperCase().replace(/\s+/g, '');
+}
+
+function tickerForProvider(ticker, provider) {
+  const t = normalizeTicker(ticker);
+  if (!t) return '';
+  if (provider === 'yahoo') return t.replace(/\./g, '-');
+  if (provider === 'finnhub' || provider === 'alphavantage') return t.replace(/-/g, '.');
+  return t;
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function firstValidResult(items, worker, concurrency = 3) {
+  if (!items.length) return null;
+  let idx = 0;
+  let found = null;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (found == null) {
+      const current = idx++;
+      if (current >= items.length) return;
+      try {
+        const value = await worker(items[current], current);
+        if (value != null && Number(value) > 0 && found == null) found = Number(value);
+      } catch (_) {
+        // Try next source.
+      }
+    }
+  });
+  await Promise.all(workers);
+  return found;
+}
+
+async function resolvePriceWithFallback(ticker, preferredApi, preferredKey) {
+  const keyFinnhub = (localStorage.getItem('inv_apikey_finnhub') || '').trim();
+  const keyAlpha = (localStorage.getItem('inv_apikey_alphavantage') || '').trim();
+  const chain = preferredApi === 'yahoo'
+    ? [{ api: 'yahoo', key: null }, { api: 'finnhub', key: keyFinnhub }, { api: 'alphavantage', key: keyAlpha }]
+    : preferredApi === 'finnhub'
+      ? [{ api: 'finnhub', key: preferredKey || keyFinnhub }, { api: 'alphavantage', key: keyAlpha }, { api: 'yahoo', key: null }]
+      : [{ api: 'alphavantage', key: preferredKey || keyAlpha }, { api: 'finnhub', key: keyFinnhub }, { api: 'yahoo', key: null }];
+
+  for (const source of chain) {
+    let p = null;
+    if (source.api === 'yahoo') p = await fetchYahoo(ticker);
+    else if (source.api === 'finnhub') p = await fetchFinnhub(ticker, source.key);
+    else p = await fetchAlphaVantage(ticker, source.key);
+    if (p != null && Number(p) > 0) return { price: Number(p), source: source.api };
+  }
+  return null;
+}
+
 async function fetchAllPrices() {
   const btn = document.getElementById('fetchAllBtn');
   const navBtn = document.getElementById('fetchBtn');
@@ -773,22 +845,37 @@ async function fetchAllPrices() {
   const tickers = portfolio.map(p => p.ticker);
   let fetched = 0;
   const failed = [];
+  let completed = 0;
 
   try {
-    for (const ticker of tickers) {
-      try {
-        let price = null;
-        if (selectedApi === 'yahoo') price = await fetchYahoo(ticker);
-        else if (selectedApi === 'finnhub') price = await fetchFinnhub(ticker, apiKey);
-        else price = await fetchAlphaVantage(ticker, apiKey);
-
-        if (price && price > 0) {
-          const idx = portfolio.findIndex(p => p.ticker === ticker);
-          if (idx >= 0) { portfolio[idx].current = price; portfolio[idx].live = true; fetched++; }
-        } else { failed.push(ticker); }
-      } catch (e) { failed.push(ticker); }
-      await new Promise(r => setTimeout(r, 300));
-    }
+    const workers = Array.from({ length: Math.min(PRICE_FETCH_CONCURRENCY, tickers.length || 1) }, async (_, workerIdx) => {
+      for (let i = workerIdx; i < tickers.length; i += PRICE_FETCH_CONCURRENCY) {
+        const ticker = tickers[i];
+        try {
+          const result = await resolvePriceWithFallback(ticker, selectedApi, apiKey);
+          if (result && result.price > 0) {
+            const idx = portfolio.findIndex(p => normalizeTicker(p.ticker) === normalizeTicker(ticker));
+            if (idx >= 0) {
+              portfolio[idx].current = Number(result.price);
+              portfolio[idx].live = true;
+              fetched++;
+              // Render progressively so users can see updates immediately.
+              renderRows();
+              renderStats();
+            }
+          } else {
+            failed.push(ticker);
+          }
+        } catch (_) {
+          failed.push(ticker);
+        } finally {
+          completed++;
+          if (status) status.textContent = `Fetching live prices... ${completed}/${tickers.length}`;
+        }
+        await sleep(120);
+      }
+    });
+    await Promise.all(workers);
 
     save(); renderAll();
 
@@ -804,7 +891,7 @@ async function fetchAllPrices() {
     if (failed.length > 0 && out) {
       out.innerHTML = `<div style="color:var(--amber2);font-size:12px;padding:8px 0;">
       Could not fetch prices for: <strong>${failed.join(', ')}</strong>.<br>
-      Yahoo tries several CORS mirrors; if all fail, use Finnhub (free key, works in-browser) or Alpha Vantage.</div>`;
+      The app now tries Yahoo + backup providers automatically. Add a Finnhub or Alpha Vantage key for maximum reliability.</div>`;
     }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Fetch all prices'; }
@@ -858,29 +945,27 @@ function yahooProxiedUrlList(yahooHttpsUrl) {
 }
 
 async function fetchYahoo(ticker) {
-  const encTicker = encodeURIComponent(ticker);
+  const encTicker = encodeURIComponent(tickerForProvider(ticker, 'yahoo'));
   const hosts = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
+  const urls = [];
   for (const host of hosts) {
     const yahooUrl = `https://${host}/v8/finance/chart/${encTicker}?interval=1d&range=1d`;
-    for (const url of yahooProxiedUrlList(yahooUrl)) {
-      try {
-        const res = await fetch(url, { headers: { Accept: 'application/json,text/plain,*/*' } });
-        if (!res.ok) continue;
-        const text = await res.text();
-        const data = parseProxyJsonText(text);
-        if (!data) continue;
-        if (data.error || data.chart?.error) continue;
-        const price = extractYahooChartPrice(data);
-        if (price != null && price > 0) return price;
-      } catch { /* try next */ }
-    }
+    urls.push(...yahooProxiedUrlList(yahooUrl));
   }
-  return null;
+  return firstValidResult(urls, async (url) => {
+    const res = await fetchWithTimeout(url, { headers: { Accept: 'application/json,text/plain,*/*' } }, FETCH_TIMEOUT_MS);
+    if (!res.ok) return null;
+    const text = await res.text();
+    const data = parseProxyJsonText(text);
+    if (!data || data.error || data.chart?.error) return null;
+    return extractYahooChartPrice(data);
+  }, 3);
 }
 
 async function fetchFinnhub(ticker, apiKey) {
   if (!apiKey) throw new Error('No API key');
-  const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(apiKey)}`);
+  const symbol = tickerForProvider(ticker, 'finnhub');
+  const res = await fetchWithTimeout(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${encodeURIComponent(apiKey)}`, {}, FETCH_TIMEOUT_MS);
   if (!res.ok) throw new Error('Finnhub failed');
   const data = await res.json();
   const c = data?.c;
@@ -892,7 +977,8 @@ async function fetchFinnhub(ticker, apiKey) {
 
 async function fetchAlphaVantage(ticker, apiKey) {
   if (!apiKey) throw new Error('No API key');
-  const res = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(ticker)}&apikey=${encodeURIComponent(apiKey)}`);
+  const symbol = tickerForProvider(ticker, 'alphavantage');
+  const res = await fetchWithTimeout(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(apiKey)}`, {}, FETCH_TIMEOUT_MS);
   if (!res.ok) throw new Error('AV failed');
   const data = await res.json();
   if (data.Note || data.Information) return null;
