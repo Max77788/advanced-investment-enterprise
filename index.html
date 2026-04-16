@@ -329,13 +329,12 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
       <input class="api-input" id="apiKeyInput" placeholder="Paste your API key here — saved locally" />
     </div>
     <div class="api-row">
-      <input class="api-input" id="corsProxy" value="https://corsproxy.io/?" placeholder="CORS proxy URL (for Yahoo Finance)" />
+      <input class="api-input" id="corsProxy" value="https://api.allorigins.win/raw?url=" placeholder="CORS proxy prefix (Yahoo) — tries fallbacks if this fails" />
       <button class="fetch-all-btn" id="fetchAllBtn" onclick="fetchAllPrices()">Fetch all prices</button>
     </div>
     <div class="api-note" style="margin-top:10px;" id="apiNote">
-      Yahoo Finance uses a free CORS proxy to bypass browser restrictions. No account needed.
-      If the proxy is blocked, try <a href="https://cors-anywhere.herokuapp.com/" target="_blank">cors-anywhere</a> or
-      <a href="https://allorigins.win/" target="_blank">allorigins.win</a>.
+      Yahoo Finance needs a CORS mirror from the browser. The app tries several automatically after your prefix.
+      No account needed. If nothing works, switch to Finnhub (free key, direct from browser).
       For Finnhub / Alpha Vantage, get a free key at their site and paste it above.
     </div>
   </div>
@@ -744,7 +743,7 @@ function selectApi(api) {
   const note = document.getElementById('apiNote');
   if(api==='yahoo') {
     keyRow.style.display='none';
-    note.innerHTML='Yahoo Finance via CORS proxy — no account needed. If blocked, try <a href="https://allorigins.win/" target="_blank">allorigins.win</a> as the proxy.';
+    note.innerHTML='Yahoo uses your proxy prefix first, then built-in mirrors (allorigins, corsproxy, codetabs). No account needed. Finnhub is the most reliable free option (API key, no proxy).';
   } else if(api==='finnhub') {
     keyRow.style.display='flex';
     document.getElementById('apiKeyInput').placeholder='Finnhub API key — get free at finnhub.io';
@@ -764,73 +763,144 @@ async function fetchAllPrices() {
   const dot = document.getElementById('priceDot');
   const status = document.getElementById('priceStatus');
 
-  btn.disabled=true; btn.textContent='Fetching...';
-  navBtn.classList.add('loading'); navBtn.textContent='Fetching...';
-  status.textContent='Fetching live prices...';
+  if (btn) { btn.disabled = true; btn.textContent = 'Fetching...'; }
+  if (navBtn) { navBtn.classList.add('loading'); navBtn.textContent = 'Fetching...'; }
+  if (status) status.textContent = 'Fetching live prices...';
 
   const apiKey = document.getElementById('apiKeyInput')?.value?.trim();
-  if(apiKey) localStorage.setItem('inv_apikey_'+selectedApi, apiKey);
+  if (apiKey) localStorage.setItem('inv_apikey_'+selectedApi, apiKey);
 
-  const tickers = portfolio.map(p=>p.ticker);
-  let fetched=0, failed=[];
+  const tickers = portfolio.map(p => p.ticker);
+  let fetched = 0;
+  const failed = [];
 
-  for(const ticker of tickers) {
-    try {
-      let price = null;
-      if(selectedApi==='yahoo') price = await fetchYahoo(ticker);
-      else if(selectedApi==='finnhub') price = await fetchFinnhub(ticker, apiKey);
-      else price = await fetchAlphaVantage(ticker, apiKey);
+  try {
+    for (const ticker of tickers) {
+      try {
+        let price = null;
+        if (selectedApi === 'yahoo') price = await fetchYahoo(ticker);
+        else if (selectedApi === 'finnhub') price = await fetchFinnhub(ticker, apiKey);
+        else price = await fetchAlphaVantage(ticker, apiKey);
 
-      if(price && price > 0) {
-        const idx = portfolio.findIndex(p=>p.ticker===ticker);
-        if(idx>=0) { portfolio[idx].current=price; portfolio[idx].live=true; fetched++; }
-      } else { failed.push(ticker); }
-    } catch(e) { failed.push(ticker); }
-    await new Promise(r=>setTimeout(r,300));
-  }
+        if (price && price > 0) {
+          const idx = portfolio.findIndex(p => p.ticker === ticker);
+          if (idx >= 0) { portfolio[idx].current = price; portfolio[idx].live = true; fetched++; }
+        } else { failed.push(ticker); }
+      } catch (e) { failed.push(ticker); }
+      await new Promise(r => setTimeout(r, 300));
+    }
 
-  save(); renderAll();
-  btn.disabled=false; btn.textContent='Fetch all prices';
-  navBtn.classList.remove('loading'); navBtn.textContent='Refresh prices';
+    save(); renderAll();
 
-  if(fetched>0) {
-    dot.className='price-dot live';
-    status.textContent=`Live · ${fetched}/${tickers.length} updated · ${new Date().toLocaleTimeString()}`;
-  } else {
-    dot.className='price-dot';
-    status.textContent=`Prices: manual (fetch failed)`;
-  }
+    if (fetched > 0) {
+      if (dot) dot.className = 'price-dot live';
+      if (status) status.textContent = `Live · ${fetched}/${tickers.length} updated · ${new Date().toLocaleTimeString()}`;
+    } else {
+      if (dot) dot.className = 'price-dot';
+      if (status) status.textContent = 'Prices: manual (fetch failed)';
+    }
 
-  if(failed.length>0) {
-    document.getElementById('outputBody').innerHTML=`<div style="color:var(--amber2);font-size:12px;padding:8px 0;">
+    const out = document.getElementById('outputBody');
+    if (failed.length > 0 && out) {
+      out.innerHTML = `<div style="color:var(--amber2);font-size:12px;padding:8px 0;">
       Could not fetch prices for: <strong>${failed.join(', ')}</strong>.<br>
-      For Yahoo Finance, CORS proxies are sometimes temporarily blocked. Try refreshing or switching to Finnhub/Alpha Vantage with an API key.</div>`;
+      Yahoo tries several CORS mirrors; if all fail, use Finnhub (free key, works in-browser) or Alpha Vantage.</div>`;
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Fetch all prices'; }
+    if (navBtn) { navBtn.classList.remove('loading'); navBtn.textContent = 'Refresh prices'; }
   }
+}
+
+function parseProxyJsonText(text) {
+  let data;
+  try { data = JSON.parse(text); } catch { return null; }
+  if (data && typeof data.contents === 'string') {
+    try { return JSON.parse(data.contents); } catch { return null; }
+  }
+  return data;
+}
+
+function extractYahooChartPrice(data) {
+  const r = data?.chart?.result?.[0];
+  if (!r) return null;
+  const m = r.meta || {};
+  const fromMeta = m.regularMarketPrice ?? m.postMarketPrice ?? m.preMarketPrice ?? m.previousClose ?? m.chartPreviousClose;
+  if (fromMeta != null && Number(fromMeta) > 0) return Number(fromMeta);
+  const closes = r.indicators?.quote?.[0]?.close;
+  if (Array.isArray(closes)) {
+    for (let i = closes.length - 1; i >= 0; i--) {
+      const c = closes[i];
+      if (c != null && Number(c) > 0) return Number(c);
+    }
+  }
+  const adj = r.indicators?.adjclose?.[0]?.adjclose;
+  if (Array.isArray(adj)) {
+    for (let i = adj.length - 1; i >= 0; i--) {
+      const c = adj[i];
+      if (c != null && Number(c) > 0) return Number(c);
+    }
+  }
+  return null;
+}
+
+function yahooProxiedUrlList(yahooHttpsUrl) {
+  const enc = encodeURIComponent(yahooHttpsUrl);
+  const user = (document.getElementById('corsProxy')?.value || '').trim();
+  const list = [];
+  const add = (u) => { if (u && !list.includes(u)) list.push(u); };
+  if (user) add(user + enc);
+  add('https://api.allorigins.win/raw?url=' + enc);
+  add('https://corsproxy.io/?' + enc);
+  add('https://api.codetabs.com/v1/proxy/?quest=' + enc);
+  add('https://api.allorigins.win/get?url=' + enc);
+  return list;
 }
 
 async function fetchYahoo(ticker) {
-  const proxy = document.getElementById('corsProxy').value.trim() || 'https://corsproxy.io/?';
-  const url = `${proxy}${encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/'+ticker+'?interval=1d&range=1d')}`;
-  const res = await fetch(url, {headers:{'User-Agent':'Mozilla/5.0'}});
-  if(!res.ok) throw new Error('Yahoo failed');
-  const data = await res.json();
-  return data?.chart?.result?.[0]?.meta?.regularMarketPrice || null;
+  const encTicker = encodeURIComponent(ticker);
+  const hosts = ['query1.finance.yahoo.com', 'query2.finance.yahoo.com'];
+  for (const host of hosts) {
+    const yahooUrl = `https://${host}/v8/finance/chart/${encTicker}?interval=1d&range=1d`;
+    for (const url of yahooProxiedUrlList(yahooUrl)) {
+      try {
+        const res = await fetch(url, { headers: { Accept: 'application/json,text/plain,*/*' } });
+        if (!res.ok) continue;
+        const text = await res.text();
+        const data = parseProxyJsonText(text);
+        if (!data) continue;
+        if (data.error || data.chart?.error) continue;
+        const price = extractYahooChartPrice(data);
+        if (price != null && price > 0) return price;
+      } catch { /* try next */ }
+    }
+  }
+  return null;
 }
 
 async function fetchFinnhub(ticker, apiKey) {
-  if(!apiKey) throw new Error('No API key');
-  const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
-  if(!res.ok) throw new Error('Finnhub failed');
+  if (!apiKey) throw new Error('No API key');
+  const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(apiKey)}`);
+  if (!res.ok) throw new Error('Finnhub failed');
   const data = await res.json();
-  return data?.c || null;
+  const c = data?.c;
+  if (c != null && Number(c) > 0) return Number(c);
+  const pc = data?.pc;
+  if (pc != null && Number(pc) > 0) return Number(pc);
+  return null;
 }
 
 async function fetchAlphaVantage(ticker, apiKey) {
-  if(!apiKey) throw new Error('No API key');
-  const res = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`);
-  if(!res.ok) throw new Error('AV failed');
+  if (!apiKey) throw new Error('No API key');
+  const res = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(ticker)}&apikey=${encodeURIComponent(apiKey)}`);
+  if (!res.ok) throw new Error('AV failed');
   const data = await res.json();
-  return parseFloat(data?.['Global Quote']?.['05. price']) || null;
+  if (data.Note || data.Information) return null;
+  const gq = data?.['Global Quote'] || {};
+  const last = parseFloat(gq['05. price']);
+  if (last > 0) return last;
+  const prev = parseFloat(gq['08. previous close']);
+  return prev > 0 ? prev : null;
 }
 
 // ═══════════════════════════════════════════
