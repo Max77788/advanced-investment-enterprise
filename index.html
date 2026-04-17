@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Investment Framework · v1.1</title>
+<title>Cipher Sentinel · v1.2</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 :root {
@@ -13,7 +13,7 @@
   --accent:#3b82f6; --accent2:#60a5fa; --accent3:#93c5fd;
   --green:#10b981; --green2:#34d399; --green3:#6ee7b7;
   --red:#ef4444; --red2:#f87171; --amber:#f59e0b; --amber2:#fbbf24;
-  --purple:#8b5cf6; --purple2:#a78bfa; --teal:#14b8a6;
+  --purple:#8b5cf6; --purple2:#a78bfa; --teal:#14b8a6; --teal2:#2dd4bf;
   --mono:'DM Mono',monospace; --sans:'DM Sans',sans-serif; --display:'Syne',sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -22,9 +22,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.025) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
 
 /* ── NAV ── */
-nav{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(10,14,26,0.95);border-bottom:1px solid var(--border);height:52px;flex-shrink:0;backdrop-filter:blur(12px);}
+nav{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:rgba(10,14,26,0.97);border-bottom:1px solid var(--border);height:52px;flex-shrink:0;backdrop-filter:blur(12px);}
 .nav-brand{display:flex;align-items:center;gap:10px;}
 .nav-logo{font-family:var(--display);font-size:15px;font-weight:800;color:var(--text);letter-spacing:-0.3px;}
+.nav-logo span{color:var(--teal2);}
 .nav-ver{font-family:var(--mono);font-size:10px;color:var(--accent2);background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:4px;padding:2px 7px;}
 .nav-tabs{display:flex;gap:2px;}
 .nav-tab{padding:6px 16px;border-radius:8px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);cursor:pointer;border:none;background:transparent;transition:all .15s;}
@@ -35,9 +36,9 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 .price-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
 .price-dot.live{background:var(--green2);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
-.fetch-btn{padding:5px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:0.06em;}
-.fetch-btn:hover{border-color:var(--green);color:var(--green2);}
-.fetch-btn.loading{color:var(--amber2);border-color:var(--amber);}
+.fetch-btn,.icon-btn{padding:5px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:0.06em;}
+.fetch-btn:hover,.icon-btn:hover{border-color:var(--green);color:var(--green2);}
+.fetch-btn.loading,.icon-btn.loading{color:var(--amber2);border-color:var(--amber);}
 
 /* ── PAGES ── */
 .page-wrap{position:relative;z-index:1;flex:1;overflow:hidden;}
@@ -71,9 +72,9 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 
 /* portfolio table */
 .ptable{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px;}
-.pthead{display:grid;grid-template-columns:70px 160px 95px 95px 95px 100px 90px 95px 80px 70px;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.pthead{display:grid;grid-template-columns:70px 150px 90px 90px 90px 100px 86px 90px 78px 100px;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border);}
 .pth{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--hint);padding:0 4px;}
-.prow{display:grid;grid-template-columns:70px 160px 95px 95px 95px 100px 90px 95px 80px 70px;padding:13px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .12s;cursor:pointer;}
+.prow{display:grid;grid-template-columns:70px 150px 90px 90px 90px 100px 86px 90px 78px 100px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .12s;cursor:pointer;}
 .prow:last-child{border-bottom:none;}
 .prow:hover{background:rgba(255,255,255,0.018);}
 .ptd{padding:0 4px;font-size:12px;}
@@ -86,8 +87,8 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 .stop-track{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;}
 .stop-fill{height:100%;background:linear-gradient(90deg,var(--red2) 0%,var(--amber2) 50%,var(--green2) 100%);border-radius:2px;}
 .price-cell{display:flex;align-items:center;gap:5px;}
-.price-live-dot{width:5px;height:5px;border-radius:50%;background:var(--green2);flex-shrink:0;}
-.price-stale-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.price-live-dot,.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green2);flex-shrink:0;}
+.price-stale-dot,.stale-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);flex-shrink:0;}
 .edit-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);border-radius:5px;padding:3px 9px;font-family:var(--mono);font-size:9px;cursor:pointer;transition:all .14s;text-transform:uppercase;letter-spacing:.05em;}
 .edit-btn:hover{border-color:var(--accent);color:var(--accent2);}
 
@@ -118,8 +119,8 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 /* prompt + control row */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 .prompt-box{font-family:var(--mono);font-size:11px;color:var(--green2);background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word;min-height:120px;}
-.copy-prompt-btn{margin-top:8px;padding:8px 14px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .14s;text-transform:uppercase;letter-spacing:.06em;}
-.copy-prompt-btn:hover{border-color:var(--green);color:var(--green2);}
+.copy-prompt-btn,.copy-btn-sm{margin-top:8px;padding:8px 14px;background:transparent;border:1px solid var(--border2);border-radius:7px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .14s;text-transform:uppercase;letter-spacing:.06em;}
+.copy-prompt-btn:hover,.copy-btn-sm:hover{border-color:var(--green);color:var(--green2);}
 .run-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
 .run-btn{padding:11px;border:none;border-radius:9px;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;color:white;letter-spacing:.02em;}
 .run-btn:hover{transform:translateY(-1px);}
@@ -159,7 +160,8 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 
 /* ── PAGE 2: FRAMEWORK ── */
 .fw-header{margin-bottom:28px;}
-.fw-title{font-family:var(--display);font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;}
+.fw-title{font-family:var(--display);font-size:26px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;}
+.fw-title span{color:var(--teal2);}
 .fw-sub{color:var(--muted);font-size:13px;}
 .fw-meta{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
 .fw-tag{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:5px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted);}
@@ -170,6 +172,7 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 .cl-content{flex:1;}
 .cl-title{font-family:var(--display);font-size:12px;font-weight:700;color:var(--amber2);margin-bottom:4px;}
 .cl-body{font-size:11px;color:var(--muted);line-height:1.6;}
+.cl-body strong{color:var(--text);}
 
 /* gate cards */
 .gates-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:24px;}
@@ -273,8 +276,8 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 <!-- NAV -->
 <nav>
   <div class="nav-brand">
-    <div class="nav-logo">Investment Framework</div>
-    <div class="nav-ver">v1.1</div>
+    <div class="nav-logo"><span>Cipher</span> Sentinel</div>
+    <div class="nav-ver">v1.2</div>
   </div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('portfolio',this)">Portfolio</button>
@@ -283,7 +286,7 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
   <div class="nav-right">
     <div class="price-status">
       <div class="price-dot" id="priceDot"></div>
-      <span id="priceStatus">Prices: manual</span>
+      <span id="priceStatus">Manual prices</span>
     </div>
     <button class="fetch-btn" id="fetchBtn" onclick="fetchAllPrices()">Refresh prices</button>
   </div>
@@ -330,7 +333,7 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
   </div>
 
   <!-- Portfolio Table -->
-  <div class="section-title">Positions</div>
+  <div class="section-title">Active positions</div>
   <div class="ptable">
     <div class="pthead">
       <div class="pth">Ticker</div>
@@ -349,22 +352,23 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
   <button class="add-row-btn" onclick="openAdd()">+ Add position</button>
 
   <!-- Prompt + Controls -->
-  <div class="section-title">Review prompt &amp; controls</div>
+  <div class="section-title">Review prompt</div>
   <div class="two-col">
     <div>
-      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:6px;">Auto-generated prompt — paste into Claude</div>
+      <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:6px;">Auto-generated — paste into Claude (new chat inside Cipher Sentinel project)</div>
       <div class="prompt-box" id="promptBox">Loading...</div>
       <button class="copy-prompt-btn" onclick="copyPrompt()">Copy prompt</button>
     </div>
     <div class="card">
       <div style="font-family:var(--display);font-size:13px;font-weight:700;margin-bottom:3px;">Run review</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Generates the correct prompt for each review type</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Each button generates the correct review prompt</div>
       <div class="run-grid">
         <button class="run-btn fri" onclick="runReview('Friday')">Friday review</button>
         <button class="run-btn mon" onclick="runReview('Monday')">Monday review</button>
       </div>
       <button class="run-btn daily" style="width:100%;margin-bottom:8px;" onclick="runReview('Daily')">Daily check</button>
-      <button class="run-btn n8n" style="width:100%;" onclick="simulateN8N()">Simulate N8N trigger</button>
+      <button class="run-btn n8n" style="width:100%;" onclick="simulateN8N()">Simulate N8N</button>
+      <div style="margin-top:12px;padding:10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:8px;font-family:var(--mono);font-size:10px;color:var(--red2);">Friday rule: REVIEW &amp; EXIT only. No new entries on Friday.</div>
     </div>
   </div>
 
@@ -378,7 +382,7 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
     <div class="output-body" id="outputBody">
       <div class="output-empty">
         <div>◎</div>
-        <div>Run a review above — the prompt will generate and be ready to paste into Claude.</div>
+        <div>Run a review above to generate the Claude prompt.</div>
       </div>
     </div>
   </div>
@@ -387,11 +391,11 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
   <div class="section-title">N8N automation</div>
   <div class="n8n-card">
     <div class="n8n-head">
-      <div><div style="font-family:var(--display);font-size:13px;font-weight:700;">Webhook trigger</div><div style="font-size:11px;color:var(--muted);">Auto-trigger reviews from N8N on your schedule</div></div>
+      <div><div style="font-family:var(--display);font-size:13px;font-weight:700;">Webhook trigger</div><div style="font-size:11px;color:var(--muted);">Auto-trigger reviews from N8N — Monday 8:30 AM CT + Friday 1:30 PM CT</div></div>
       <div class="n8n-badge">N8N · Webhook</div>
     </div>
     <div class="wh-row">
-      <input class="wh-input" id="webhookUrl" placeholder="https://your-n8n-instance.com/webhook/portfolio-review" />
+      <input class="wh-input" id="webhookUrl" placeholder="https://your-n8n-instance.com/webhook/cipher-sentinel" />
       <button class="wh-copy" onclick="copyWH()">Copy URL</button>
       <button class="wh-copy" onclick="copyPayload()">Copy payload</button>
     </div>
@@ -412,13 +416,13 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 <div class="page" id="page-framework">
 
   <div class="fw-header">
-    <div class="fw-title">Investment Research Framework</div>
-    <div class="fw-sub">The complete strategy, gates, guardrails, and review process — Version 1.1</div>
+    <div class="fw-title"><span>Cipher</span> Sentinel — Investment Research Framework</div>
+    <div class="fw-sub">Complete strategy, gates, guardrails, and review process</div>
     <div class="fw-meta">
-      <span class="fw-tag">Locked: April 10, 2026</span>
-      <span class="fw-tag">Updated: April 10, 2026</span>
+      <span class="fw-tag">v1.2 · April 15, 2026</span>
+      <span class="fw-tag">Supersedes v1.1 (Apr 10)</span>
       <span class="fw-tag">6-month review: October 2026</span>
-      <span class="fw-tag">Capital: $24,000</span>
+      <span class="fw-tag">Strategy capital: $20,000</span>
     </div>
   </div>
 
@@ -426,8 +430,8 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
   <div class="changelog-banner">
     <div class="cl-icon">⟳</div>
     <div class="cl-content">
-      <div class="cl-title">v1.1 changes from v1.0</div>
-      <div class="cl-body">Added bi-weekly Friday + Monday review cadence · Sector diversification rule (2 positions, different sectors always) · Rotation rules (exit before entering, wait 1 week post-stop) · Trigger prompt system · Alert setup guide for Etrade and Fidelity · Sector rotation menu with 9 buckets</div>
+      <div class="cl-title">v1.2 changes from v1.1</div>
+      <div class="cl-body"><strong>Named: Cipher Sentinel</strong> · <strong>Capital corrected</strong> to $20,000 strategy deployable · <strong>Friday no-buy rule</strong> reinforced · <strong>Monday entry rule</strong> clarified · Day-of-week discipline and reliability-focused price updates.</div>
     </div>
   </div>
 
