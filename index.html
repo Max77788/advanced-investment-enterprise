@@ -218,14 +218,17 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 .source-name{font-family:var(--display);font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
 .source-what{font-size:10px;color:var(--muted);line-height:1.4;}
 
-/* review cadence */
-.cadence-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
-.cadence-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:15px;}
-.cadence-day{font-family:var(--display);font-size:14px;font-weight:700;margin-bottom:2px;}
-.cadence-time{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px;}
-.cadence-item{font-size:11px;color:var(--muted);padding:3px 0;border-bottom:1px solid var(--border);}
-.cadence-item:last-child{border-bottom:none;}
-.cadence-item strong{color:var(--text);}
+/* day-of-week action map */
+.day-map{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:24px;}
+.day-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.day-name{font-family:var(--display);font-size:13px;font-weight:700;margin-bottom:4px;}
+.day-role{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.day-item{font-size:10px;color:var(--muted);padding:2px 0;line-height:1.4;}
+.day-fri .day-name{color:var(--purple2);} .day-fri .day-role{color:var(--purple2);}
+.day-mon .day-name{color:var(--accent2);} .day-mon .day-role{color:var(--accent2);}
+.day-mid .day-name{color:var(--muted);} .day-mid .day-role{color:var(--muted);}
+.day-wkd .day-name{color:var(--hint);} .day-wkd .day-role{color:var(--hint);}
+.day-any .day-name{color:var(--red2);} .day-any .day-role{color:var(--red2);}
 
 /* sectors */
 .sector-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:24px;}
@@ -241,6 +244,8 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 .inline-edit:focus{border-color:var(--accent);}
 .save-fw-btn{padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:white;font-family:var(--display);font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;}
 .save-fw-btn:hover{background:#2563eb;}
+.add-btn-alt{padding:8px 20px;background:var(--surface2);border:1px solid var(--border2);border-radius:7px;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .14s;}
+.add-btn-alt:hover{border-color:var(--accent);color:var(--accent2);}
 
 /* review log */
 .log-table{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;}
@@ -301,11 +306,11 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 
   <!-- Stats -->
   <div class="stats-grid">
-    <div class="stat"><div class="stat-label">Total value</div><div class="stat-val" id="s-value">—</div></div>
-    <div class="stat"><div class="stat-label">Total gain</div><div class="stat-val" id="s-gain">—</div><div class="stat-sub" id="s-gainpct">—</div></div>
-    <div class="stat"><div class="stat-label">Strategy positions</div><div class="stat-val" id="s-active">0</div><div class="stat-sub">max 2 · diff sectors</div></div>
-    <div class="stat"><div class="stat-label">Cash reserve</div><div class="stat-val" id="s-cash">$274.99</div></div>
-    <div class="stat"><div class="stat-label">Max loss guardrail</div><div class="stat-val">$4,800</div><div class="stat-sub">20% of $24,000</div></div>
+    <div class="stat"><div class="stat-label">Strategy capital</div><div class="stat-val" id="s-value">—</div><div class="stat-sub">$20k deployable</div></div>
+    <div class="stat"><div class="stat-label">Unrealized gain</div><div class="stat-val" id="s-gain">—</div><div class="stat-sub" id="s-gainpct">—</div></div>
+    <div class="stat"><div class="stat-label">Active positions</div><div class="stat-val" id="s-active">0</div><div class="stat-sub">max 2 · diff sectors</div></div>
+    <div class="stat"><div class="stat-label">Cash available</div><div class="stat-val" id="s-cash">$18,261</div><div class="stat-sub">strategy cash</div></div>
+    <div class="stat"><div class="stat-label">Max loss guardrail</div><div class="stat-val">$4,000</div><div class="stat-sub">20% of $20k</div></div>
   </div>
 
   <!-- Live Price API -->
@@ -345,7 +350,7 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
       <div class="pth">Stop GTC</div>
       <div class="pth">Target 1</div>
       <div class="pth">Status</div>
-      <div class="pth">Edit</div>
+      <div class="pth">Actions</div>
     </div>
     <div id="portfolioRows"></div>
   </div>
@@ -401,10 +406,10 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
     </div>
     <div class="payload-view" id="payloadView"></div>
     <div class="n8n-steps">
-      <div class="n8n-step"><div class="step-num">Step 1 — N8N</div><div class="step-text"><strong>Schedule Trigger</strong> — Mon 8:30 AM CT + Fri 1:30 PM CT. Cron: <code style="color:var(--accent2);">30 8 * * 1</code> and <code style="color:var(--accent2);">30 13 * * 5</code></div></div>
-      <div class="n8n-step"><div class="step-num">Step 2 — N8N</div><div class="step-text"><strong>HTTP Request</strong> node — POST to your Claude API or webhook URL. Body: the payload shown above.</div></div>
-      <div class="n8n-step"><div class="step-num">Step 3 — N8N</div><div class="step-text"><strong>Code node</strong> — build the review prompt from the payload. Append current prices from Yahoo Finance API call.</div></div>
-      <div class="n8n-step"><div class="step-num">Step 4 — N8N</div><div class="step-text"><strong>Email / Telegram / Slack</strong> node — receive the full Claude framework review automatically in your inbox.</div></div>
+      <div class="n8n-step"><div class="step-num">Step 1</div><div class="step-text"><strong>Schedule Trigger</strong> — Mon 8:30 AM CT (<code style="color:var(--accent2);">30 8 * * 1</code>) + Fri 1:30 PM CT (<code style="color:var(--accent2);">30 13 * * 5</code>)</div></div>
+      <div class="n8n-step"><div class="step-num">Step 2</div><div class="step-text"><strong>HTTP Request</strong> — POST payload to Claude API or this dashboard webhook URL</div></div>
+      <div class="n8n-step"><div class="step-num">Step 3</div><div class="step-text"><strong>Code node</strong> — build review prompt from payload + fetch live prices from Yahoo Finance API</div></div>
+      <div class="n8n-step"><div class="step-num">Step 4</div><div class="step-text"><strong>Email / Telegram / Slack</strong> — deliver full Claude review to your inbox automatically</div></div>
     </div>
   </div>
 
@@ -431,73 +436,80 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
     <div class="cl-icon">⟳</div>
     <div class="cl-content">
       <div class="cl-title">v1.2 changes from v1.1</div>
-      <div class="cl-body"><strong>Named: Cipher Sentinel</strong> · <strong>Capital corrected</strong> to $20,000 strategy deployable · <strong>Friday no-buy rule</strong> reinforced · <strong>Monday entry rule</strong> clarified · Day-of-week discipline and reliability-focused price updates.</div>
+      <div class="cl-body">
+        <strong>Named: Cipher Sentinel</strong> — part of the Cipher Suite (Cipher Signal for content, Cipher Brief for meeting intelligence) ·
+        <strong>Capital corrected</strong> to $20,000 strategy deployable ($24k total includes UBER legacy hold) ·
+        <strong>Friday no-buy rule</strong> — Friday is Watch/Review/Protect/Exit only. Zero new position entries on Friday. Buying Friday = 48+ hours of uncontrollable weekend risk ·
+        <strong>Monday entry rule</strong> — new positions entered Monday only, after 9:45 AM ET, after weekend macro confirmed clear ·
+        <strong>Day-of-week action map</strong> added — each day has a defined role ·
+        MU stop executed April 15 at $440 (total trade profit ~$860). Re-entry eligible April 22 if passes all 6 gates fresh
+      </div>
     </div>
   </div>
 
   <!-- Portfolio parameters -->
   <div class="section-title">Portfolio parameters</div>
-  <div class="edit-note">// click any value to edit inline — changes save automatically</div>
+  <div class="edit-note">// click any value to edit — saves automatically</div>
   <div class="param-table" id="paramTable"></div>
 
   <!-- The 6-gate system -->
   <div class="section-title">The 6-gate system</div>
-  <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Every candidate must pass all six gates in order. Failure at any gate = automatic disqualification. No exceptions.</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Every candidate must pass all 6 gates in order. Failure at any gate = automatic disqualification. No exceptions, no workarounds.</div>
   <div class="gates-grid" id="gatesGrid"></div>
+
+  <div class="section-title">Day-of-week action map</div>
+  <div class="day-map">
+    <div class="day-card day-mon">
+      <div class="day-name">Monday</div><div class="day-role">Entry day</div>
+      <div class="day-item">Check weekend macro</div><div class="day-item">Run Monday review</div>
+      <div class="day-item">Enter new positions after 9:45 AM ET</div><div class="day-item">Deploy reserve cash if clean</div>
+    </div>
+    <div class="day-card day-mid">
+      <div class="day-name">Tue – Thu</div><div class="day-role">Hold & monitor</div>
+      <div class="day-item">Confirm stops active</div><div class="day-item">Watch for analyst changes</div>
+      <div class="day-item">No new entries</div><div class="day-item">Exit if stop triggers</div>
+    </div>
+    <div class="day-card day-fri">
+      <div class="day-name">Friday</div><div class="day-role">Protect day</div>
+      <div class="day-item">Run Friday review by 2 PM CT</div><div class="day-item">Take profits if at Target 1</div>
+      <div class="day-item">Tighten stops pre-weekend</div><div class="day-item" style="color:var(--red2);font-weight:500;">ZERO new entries</div>
+    </div>
+    <div class="day-card day-wkd">
+      <div class="day-name">Sat / Sun</div><div class="day-role">No access</div>
+      <div class="day-item">Markets closed</div><div class="day-item">No action possible</div>
+      <div class="day-item">This is why Friday entries are prohibited</div>
+    </div>
+    <div class="day-card day-any">
+      <div class="day-name">Any day</div><div class="day-role">Exit if needed</div>
+      <div class="day-item">Stop triggered → exit immediately</div><div class="day-item">Gate 1 failure → exit immediately</div>
+      <div class="day-item">2+ downgrades → tighten or exit</div><div class="day-item">Speed matters on broken thesis</div>
+    </div>
+  </div>
 
   <!-- Hard rules -->
   <div class="section-title">Non-negotiable hard rules</div>
   <div class="rules-grid" id="rulesGrid"></div>
 
-  <!-- Review cadence -->
-  <div class="section-title">Bi-weekly review cadence</div>
-  <div class="cadence-grid">
-    <div class="cadence-card" style="border-top:2px solid var(--purple2);">
-      <div class="cadence-day" style="color:var(--purple2);">Friday review</div>
-      <div class="cadence-time">By 2:00 PM CT · Before market close</div>
-      <div class="cadence-item"><strong>Focus:</strong> Close the week clean</div>
-      <div class="cadence-item"><strong>Check:</strong> Stop-loss orders active on Etrade/Fidelity</div>
-      <div class="cadence-item"><strong>Check:</strong> Any analyst downgrades this week?</div>
-      <div class="cadence-item"><strong>Check:</strong> Weekend macro risk events?</div>
-      <div class="cadence-item"><strong>Decide:</strong> Hold / take partials / tighten stop / exit</div>
-      <div class="cadence-item"><strong>Rule:</strong> Uncertain? Tighten stop. You can re-enter.</div>
-    </div>
-    <div class="cadence-card" style="border-top:2px solid var(--accent2);">
-      <div class="cadence-day" style="color:var(--accent2);">Monday review</div>
-      <div class="cadence-time">By 9:30 AM CT · Before market open</div>
-      <div class="cadence-item"><strong>Focus:</strong> Catch what changed over weekend</div>
-      <div class="cadence-item"><strong>Check:</strong> Geopolitical news — ceasefire, oil, OPEC</div>
-      <div class="cadence-item"><strong>Check:</strong> Pre-market prices for all positions</div>
-      <div class="cadence-item"><strong>Check:</strong> Sector ETFs (SMH for tech, JETS for airlines)</div>
-      <div class="cadence-item"><strong>Decide:</strong> Hold / deploy reserve / adjust stop / exit</div>
-      <div class="cadence-item"><strong>Rule:</strong> Wait until 9:45 AM ET before acting at open.</div>
-    </div>
-  </div>
-
-  <!-- Sector menu -->
   <div class="section-title">Sector rotation menu</div>
   <div class="sector-grid" id="sectorGrid"></div>
 
-  <!-- Data sources -->
   <div class="section-title">Locked data sources</div>
   <div class="sources-grid" id="sourcesGrid"></div>
 
-  <!-- Review log -->
-  <div class="section-title">Strategy review log</div>
+  <div class="section-title">Review log</div>
   <div class="log-table">
     <div class="log-head">
       <div class="log-th">Date</div>
       <div class="log-th">Type</div>
       <div class="log-th">Version</div>
-      <div class="log-th">Changes made</div>
-      <div class="log-th">Next review</div>
+      <div class="log-th">Changes</div>
+      <div class="log-th">Next</div>
     </div>
     <div id="reviewLog"></div>
   </div>
-
-  <div style="margin-bottom:40px;display:flex;gap:10px;">
+  <div style="display:flex;gap:10px;margin-bottom:40px;">
     <button class="save-fw-btn" onclick="addLogEntry()">+ Add log entry</button>
-    <button class="save-fw-btn" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border2);" onclick="exportFramework()">Export framework</button>
+    <button class="add-btn-alt" onclick="exportFramework()">Export as .txt</button>
   </div>
 
 </div>
@@ -560,13 +572,19 @@ const DEFAULT_PORTFOLIO = [
 ];
 
 const DEFAULT_PARAMS = [
-  ['Capital deployed','$24,000'],['Monthly return target','3–4% per month'],
-  ['Maximum loss guardrail','$4,800 (20% of capital)'],['Max open positions','2 — always different sectors'],
-  ['Stop-loss per position','Hard 15% below entry · GTC order set immediately'],
-  ['Partial profit target','+8–10% · sell 50%, trail remaining 50%'],
-  ['Review cadence','Friday 2 PM CT + Monday 9:30 AM CT — every week'],
-  ['Strategy review','October 2026 (6 months from lock date)'],
+  ['Total portfolio value','~$26,500 (Apr 15, 2026)'],
+  ['Strategy deployable capital','$20,000 (excludes UBER legacy hold)'],
+  ['Monthly return target','3–4% per month on $20k strategy capital'],
+  ['Maximum loss guardrail','$4,000 (20% of $20k)'],
+  ['Max open positions','2 — always different sector buckets'],
+  ['Stop-loss per position','Hard 15% below entry · GTC order set immediately on fill'],
+  ['Partial profit target','+8–10% · sell 50%, move stop to breakeven, trail remaining'],
+  ['Friday rule','Watch / Review / Protect / Exit ONLY — ZERO new position entries on Friday'],
+  ['Monday entry','Enter new positions Monday after 9:45 AM ET — after weekend macro confirmed clear'],
+  ['Review cadence','Friday by 2 PM CT + Monday by 9:30 AM CT — every week'],
+  ['Strategy review','October 2026 (6 months from v1.0 lock)'],
   ['Platforms','Etrade.com and Fidelity.com'],
+  ['Brand','Cipher Sentinel — part of the Cipher Suite'],
 ];
 
 const GATES = [
@@ -618,8 +636,9 @@ const SOURCES = [
 ];
 
 const DEFAULT_LOG = [
-  {date:'Apr 10, 2026',type:'Lock',version:'v1.0',changes:'Initial framework locked. 6-gate system, 5 analysis layers, hard rules, data sources.',next:'Oct 2026'},
-  {date:'Apr 10, 2026',type:'Update',version:'v1.1',changes:'Bi-weekly review cadence, sector diversification rule, prompt system, N8N integration, alert setup guide.',next:'Oct 2026'},
+  {date:'Apr 10, 2026',type:'Lock',version:'v1.0',changes:'Initial framework. 6 gates, 5 layers, hard rules, Thursday weekly review.',next:'Oct 2026'},
+  {date:'Apr 10, 2026',type:'Update',version:'v1.1',changes:'Bi-weekly Fri+Mon cadence, sector diversification rule, prompt system, N8N, alert guide.',next:'Oct 2026'},
+  {date:'Apr 15, 2026',type:'Update',version:'v1.2',changes:'Named Cipher Sentinel. Capital corrected $20k. Friday no-buy rule. Monday entry rule. Day map. MU archived.',next:'Oct 2026'},
 ];
 
 let portfolio = [];
@@ -1147,7 +1166,7 @@ function renderLog() {
 function addLogEntry() {
   const date=prompt('Date (e.g. Apr 14, 2026):',''); if(!date) return;
   const type=prompt('Type (Lock / Update / Review):','Review'); if(!type) return;
-  const version=prompt('Version (e.g. v1.2):','v1.1'); if(!version) return;
+  const version=prompt('Version (e.g. v1.2):','v1.2'); if(!version) return;
   const changes=prompt('Changes made:',''); if(!changes) return;
   const next=prompt('Next review date:','Oct 2026'); if(!next) return;
   log.push({date,type,version,changes,next}); save(); renderLog();
@@ -1155,10 +1174,10 @@ function addLogEntry() {
 
 function exportFramework() {
   const strategy=portfolio.filter(p=>p.strategy==='yes');
-  const content=`INVESTMENT RESEARCH FRAMEWORK — ${new Date().toLocaleDateString()}\n${'='.repeat(60)}\n\nPORTFOLIO PARAMETERS\n${params.map(p=>`${p[0]}: ${p[1]}`).join('\n')}\n\nSTRATEGY POSITIONS\n${strategy.map(p=>`${p.ticker} — entry $${p.entry}, current $${p.current}, stop $${p.stop}, target $${p.target}, ${p.shares} shares`).join('\n')}\n\nTHE 6-GATE SYSTEM\n${GATES.map(g=>`${g.num} — ${g.name}: ${g.cond.replace(/<[^>]+>/g,'')}`).join('\n\n')}\n\nHARD RULES\n${RULES.map(r=>`${r.title}: ${r.body}`).join('\n')}\n\nREVIEW LOG\n${log.map(l=>`${l.date} | ${l.type} | ${l.version} | ${l.changes}`).join('\n')}`;
+  const content=`CIPHER SENTINEL — INVESTMENT RESEARCH FRAMEWORK — ${new Date().toLocaleDateString()}\n${'='.repeat(60)}\n\nPORTFOLIO PARAMETERS\n${params.map(p=>`${p[0]}: ${p[1]}`).join('\n')}\n\nSTRATEGY POSITIONS\n${strategy.map(p=>`${p.ticker} — entry $${p.entry}, current $${p.current}, stop $${p.stop}, target $${p.target}, ${p.shares} shares`).join('\n')}\n\nTHE 6-GATE SYSTEM\n${GATES.map(g=>`${g.num} — ${g.name}: ${g.cond.replace(/<[^>]+>/g,'')}`).join('\n\n')}\n\nHARD RULES\n${RULES.map(r=>`${r.title}: ${r.body}`).join('\n')}\n\nREVIEW LOG\n${log.map(l=>`${l.date} | ${l.type} | ${l.version} | ${l.changes}`).join('\n')}`;
   const blob=new Blob([content],{type:'text/plain'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download='Investment_Framework_v1.1_'+new Date().toISOString().split('T')[0]+'.txt';
+  a.download='Cipher_Sentinel_v1.2_'+new Date().toISOString().split('T')[0]+'.txt';
   a.click();
 }
 
